@@ -1,0 +1,32 @@
+services:
+  # Backend Web Service (Python FastAPI)
+  - type: web
+    name: nirogpath-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: USE_MOCK_DB
+        value: "true"
+
+  # Frontend Static Site (React)
+  - type: static
+    name: nirogpath-frontend
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_BACKEND_URL
+        fromService:
+          type: web
+          name: nirogpath-backend
+          property: url

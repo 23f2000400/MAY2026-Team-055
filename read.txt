@@ -1,0 +1,61 @@
+========================================================================
+                      NirogPath Project Setup & Execution Guide
+========================================================================
+
+This document outlines the steps required to set up and run the NirogPath application (FastAPI backend + React frontend) on your local machine.
+
+------------------------------------------------------------------------
+1. PREREQUISITES
+------------------------------------------------------------------------
+- Python: v3.10 or higher
+- Node.js: v18 or higher (npm / yarn)
+- MongoDB: Local instance or MongoDB Atlas URI (Optional; in-memory mock DB is built-in fallback)
+
+------------------------------------------------------------------------
+2. BACKEND SETUP & RUNNING
+------------------------------------------------------------------------
+Step 1: Open a terminal in the project root directory.
+
+Step 2: Install Python dependencies:
+    pip install -r requirements.txt
+
+Step 3: (Optional) Configure environment variables.
+    Create or edit `backend/.env`:
+        MONGO_URL=mongodb://localhost:27017
+        USE_MOCK_DB=true  # Set to "true" to run without a local MongoDB instance
+        JWT_SECRET=your_custom_jwt_secret
+
+Step 4: Start the FastAPI Backend Server:
+    uvicorn backend.server:app --host 127.0.0.1 --port 8000 --reload
+
+    - Backend Server URL: http://127.0.0.1:8000
+    - Interactive Swagger API Docs: http://127.0.0.1:8000/docs
+
+------------------------------------------------------------------------
+3. FRONTEND SETUP & RUNNING
+------------------------------------------------------------------------
+Step 1: Open a second terminal window and navigate to the frontend directory:
+    cd frontend
+
+Step 2: Install Node.js dependencies:
+    npm install
+    # or if using yarn:
+    yarn install
+
+Step 3: Start the React Development Server:
+    npm start
+    # or if using yarn:
+    yarn start
+
+    - App URL: http://localhost:3000
+    - The frontend automatically proxies API calls (/api/*) to http://127.0.0.1:8000.
+
+------------------------------------------------------------------------
+4. RUNNING TEST SUITE (OPTIONAL)
+------------------------------------------------------------------------
+To run the automated pytest suite for backend endpoints:
+    1. Ensure the backend server is running on http://127.0.0.1:8000
+    2. Run:
+        pytest backend/tests
+
+========================================================================

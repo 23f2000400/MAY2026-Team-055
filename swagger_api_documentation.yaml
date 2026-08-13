@@ -1,0 +1,2998 @@
+openapi: 3.1.0
+info:
+  title: NirogPath API
+  version: 1.0.0
+  description: |
+    REST API for the **NirogPath Healthcare & OPD Prescription Hub Platform**.
+    A comprehensive healthcare management system supporting Patients, Doctors, Clinic Receptionists, and Superuser Admins.
+    
+    ## Authentication & Security
+    Protected endpoints require a HTTP Bearer JWT token passed in the `Authorization` header:
+    `Authorization: Bearer <jwt_token>`
+    
+    Tokens are obtained by authenticating via `POST /api/auth/login` or `POST /api/auth/register`.
+    
+    ## System Roles & Access Control Matrix
+    - **patient**: Browse doctors/hospitals, book consultation slots, pay token deposit via wallet, track live OPD queue position, view e-prescriptions, log daily medication doses, manage family profiles, and ask prescription follow-up questions.
+    - **doctor**: Access doctor queue, advance consultation state (`call-next`, `complete`), broadcast running late warnings, set location & availability schedules, write e-prescriptions, reply to patient prescription queries.
+    - **receptionist**: Clinic-wide aggregated metrics across doctors, hospital map uploads, walk-in token creation, and patient transfer management.
+    - **admin**: Superuser operations — register doctors, create partner hospitals, manage users, and view hospital analytics.
+    
+    ## User Story Mapping
+    | User Story ID | Role | Description | API Endpoints |
+    |---|---|---|---|
+    | **US-P1** | Patient | Register account with initial ₹2000 wallet credit | `POST /api/auth/register` |
+    | **US-P2** | Patient | Authenticate & retrieve profile | `POST /api/auth/login`, `GET /api/auth/me` |
+    | **US-P3** | Patient | Browse doctor directory & filter by specialty/rating | `GET /api/doctors`, `GET /api/search/doctors` |
+    | **US-P4** | Patient | Browse hospital directory & affiliated doctors | `GET /api/hospitals`, `GET /api/hospitals/{id}/doctors` |
+    | **US-P5** | Patient | View doctor consultation slot availability | `GET /api/doctors/{id}/slots` |
+    | **US-P6** | Patient | Book appointment slot with ₹200 token deposit | `POST /api/bookings` |
+    | **US-P7** | Patient | View appointment history & track live OPD queue | `GET /api/bookings/me`, `GET /api/bookings/{id}/queue-position` |
+    | **US-P8** | Patient | Arrive at clinic & cancel appointment with deposit refund | `POST /api/bookings/{id}/arrive`, `POST /api/bookings/{id}/cancel` |
+    | **US-P9** | Patient | View e-prescriptions & print prescription payload | `GET /api/prescriptions/me`, `GET /api/prescriptions/{id}`, `GET /api/prescriptions/{id}/print-data` |
+    | **US-P10** | Patient | View daily medicine alarm schedule & log doses | `GET /api/medicines/today`, `POST /api/medicines/take` |
+    | **US-P11** | Patient | Manage family member profiles | `GET /api/family`, `POST /api/family`, `DELETE /api/family/{id}` |
+    | **US-P12** | Patient | Ask prescription follow-up questions | `GET /api/prescriptions/{id}/messages`, `POST /api/prescriptions/{id}/messages` |
+    | **US-D1** | Doctor | View token-ordered patient OPD queue | `GET /api/doctor/queue` |
+    | **US-D2** | Doctor | Advance queue status (`call-next`, `complete`) | `POST /api/doctor/bookings/{id}/call-next`, `POST /api/doctor/bookings/{id}/complete` |
+    | **US-D3** | Doctor | Set running late delay warning for queue | `POST /api/doctor/set-late` |
+    | **US-D4** | Doctor | Write structured e-prescription (OD/BID/TID/QID) | `POST /api/doctor/bookings/{id}/prescription` |
+    | **US-D5** | Doctor | Answer patient prescription follow-up questions | `GET /api/doctor/questions/unread`, `POST /api/prescriptions/{id}/messages` |
+    | **US-R1** | Receptionist | View aggregate clinic statistics across doctors | `GET /api/reception/overview`, `GET /api/reception/analytics` |
+    | **US-R2** | Receptionist | Generate offline walk-in patient token | `POST /api/reception/walkin` |
+    | **US-R3** | Receptionist | Offer appointment transfer to faster queue | `GET /api/reception/transfer-candidates`, `POST /api/reception/offer-transfer` |
+    | **US-A1** | Admin | Register new doctor with hospital association | `POST /api/admin/doctors` |
+    | **US-A2** | Admin | Register new hospital with photo upload | `POST /api/admin/hospitals`, `PUT /api/admin/hospitals/{id}` |
+    | **US-A3** | Admin | Manage system user accounts & view analytics | `GET /api/admin/users`, `GET /api/admin/hospitals/{id}/analytics` |
+    | **US-M4-1** | Patient | AI Smart Doctor & Specialty Recommender (Sprint 2) | `POST /api/ai/recommend` |
+    | **US-M4-2** | Doctor / Receptionist | OPD Queue Review Assistant (Sprint 2) | `GET /api/doctor/bookings/{booking_id}/review` |
+    | **US-M4-3** | Patient / Doctor | RAG-Based AI Prescription Q&A Assistant (Sprint 2) | `POST /api/prescriptions/{id}/messages`, `GET /api/prescriptions/{id}/messages` |
+    
+    ## Error Handling Details
+    The API follows standard HTTP status codes for error responses:
+    - `HTTP 400 Bad Request`: Validation failure, invalid parameters, insufficient wallet balance, or invalid dosage frequency.
+    - `HTTP 401 Unauthorized`: Missing or invalid Bearer JWT token.
+    - `HTTP 403 Forbidden`: Role-Based Access Control (RBAC) failure or unauthorized resource access attempt.
+    - `HTTP 404 Not Found`: Requested resource (Doctor, Hospital, Booking, Prescription) does not exist.
+    - `HTTP 409 Conflict`: Slot already booked or conflicting operation.
+    - `HTTP 422 Unprocessable Entity`: Request body failed Pydantic schema validation.
+    - `HTTP 500 Internal Server Error`: Unexpected server or database exception.
+paths:
+  /api/auth/register:
+    post:
+      summary: Register
+      operationId: register_api_auth_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/auth/login:
+    post:
+      summary: Login
+      operationId: login_api_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/auth/me:
+    get:
+      summary: Me
+      operationId: me_api_auth_me_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+    patch:
+      summary: Update Profile
+      description: Update profile fields for any authenticated user.
+      operationId: update_profile_api_auth_me_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdateIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/ai/recommend:
+    post:
+      summary: AI Smart Doctor & Specialty Recommender
+      description: |
+        Sprint 2 / Milestone 4 AI feature (US-M4-1).
+        Accepts plain language symptom description, preferred city, and patient budget.
+        Invokes LLM and vector store to recommend the optimal doctor, specialty, hospital, and consultation slot,
+        complete with single-sentence reasoning and potential budget warning alerts.
+      operationId: ai_recommend_doctor_api_ai_recommend_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendIn"
+      responses:
+        200:
+          description: Recommendation successfully generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIRecommendOut"
+        400:
+          description: Non-medical query failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+        503:
+          description: Invalid doctor reference or AI service unavailable
+  /api/hospitals:
+    get:
+      summary: List Hospitals
+      operationId: list_hospitals_api_hospitals_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/hospitals/{hospital_id}/doctors:
+    get:
+      summary: Hospital Doctors
+      operationId: hospital_doctors_api_hospitals__hospital_id__doctors_get
+      parameters:
+        - name: hospital_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Hospital Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctors:
+    get:
+      summary: List Doctors
+      operationId: list_doctors_api_doctors_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/doctors/{doctor_id}/slots:
+    get:
+      summary: Doctor Slots
+      operationId: doctor_slots_api_doctors__doctor_id__slots_get
+      parameters:
+        - name: doctor_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Doctor Id
+        - name: date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: null
+            title: Date
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/bookings:
+    post:
+      summary: Create Booking
+      operationId: create_booking_api_bookings_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/bookings/me:
+    get:
+      summary: My Bookings
+      operationId: my_bookings_api_bookings_me_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/bookings/{booking_id}/arrive:
+    post:
+      summary: Mark Arrived
+      operationId: mark_arrived_api_bookings__booking_id__arrive_post
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/bookings/{booking_id}/queue-position:
+    get:
+      summary: Booking Queue Position
+      operationId: booking_queue_position_api_bookings__booking_id__queue_position_get
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/bookings/{booking_id}/cancel:
+    post:
+      summary: Cancel Booking
+      operationId: cancel_booking_api_bookings__booking_id__cancel_post
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/queue:
+    get:
+      summary: Doctor Queue
+      operationId: doctor_queue_api_doctor_queue_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/doctor/bookings/{booking_id}/call-next:
+    post:
+      summary: Call Next
+      operationId: call_next_api_doctor_bookings__booking_id__call_next_post
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/bookings/{booking_id}/complete:
+    post:
+      summary: Complete Booking
+      operationId: complete_booking_api_doctor_bookings__booking_id__complete_post
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/bookings/{booking_id}/review:
+    get:
+      summary: Doctor & Receptionist OPD Queue Review Assistant
+      description: |
+        Sprint 2 / Milestone 4 AI feature (US-M4-2).
+        Generates an automated AI clinical review summary for an OPD patient booking,
+        highlighting clinical urgency warning flags (e.g., high fever) and suggested immediate doctor action.
+        Restricted to Doctor, Receptionist, and Admin roles (Patients receive HTTP 403).
+      operationId: get_booking_review_api_doctor_bookings__booking_id__review_get
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Queue review summary generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueReviewOut"
+        403:
+          description: Forbidden - Patient access blocked
+        404:
+          description: Booking not found
+  /api/doctor/set-late:
+    post:
+      summary: Set Late
+      operationId: set_late_api_doctor_set_late_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LateIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/bookings/{booking_id}/prescription:
+    post:
+      summary: Write Prescription
+      operationId: write_prescription_api_doctor_bookings__booking_id__prescription_post
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrescriptionIn"
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/prescriptions/me:
+    get:
+      summary: My Prescriptions
+      operationId: my_prescriptions_api_prescriptions_me_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/prescriptions/{prescription_id}:
+    get:
+      summary: Get Prescription
+      operationId: get_prescription_api_prescriptions__prescription_id__get
+      parameters:
+        - name: prescription_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Prescription Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/medicines/today:
+    get:
+      summary: Medicines Today
+      description: Flattened list of every dose the patient should take today across all active prescriptions.
+      operationId: medicines_today_api_medicines_today_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/medicines/take:
+    post:
+      summary: Take Dose
+      operationId: take_dose_api_medicines_take_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TakeDoseIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/reception/overview:
+    get:
+      summary: Reception Overview
+      operationId: reception_overview_api_reception_overview_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/admin/doctors:
+    post:
+      summary: Admin Create Doctor
+      operationId: admin_create_doctor_api_admin_doctors_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDoctorIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/admin/hospitals:
+    get:
+      summary: Admin List Hospitals
+      operationId: admin_list_hospitals_api_admin_hospitals_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+    post:
+      summary: Admin Create Hospital
+      operationId: admin_create_hospital_api_admin_hospitals_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHospitalIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/admin/hospitals/{hospital_id}:
+    put:
+      summary: Admin Update Hospital
+      operationId: admin_update_hospital_api_admin_hospitals__hospital_id__put
+      parameters:
+        - name: hospital_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Hospital Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHospitalIn"
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+    delete:
+      summary: Admin Delete Hospital
+      operationId: admin_delete_hospital_api_admin_hospitals__hospital_id__delete
+      parameters:
+        - name: hospital_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Hospital Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/admin/hospitals/{hospital_id}/analytics:
+    get:
+      summary: Admin Hospital Analytics
+      operationId: admin_hospital_analytics_api_admin_hospitals__hospital_id__analytics_get
+      parameters:
+        - name: hospital_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Hospital Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/admin/users:
+    get:
+      summary: Admin List Users
+      operationId: admin_list_users_api_admin_users_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/:
+    get:
+      summary: Root
+      operationId: root_api__get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/health:
+    get:
+      summary: Health
+      operationId: health_api_health_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/reception/analytics:
+    get:
+      summary: Reception Analytics
+      operationId: reception_analytics_api_reception_analytics_get
+      parameters:
+        - name: range
+          in: query
+          required: false
+          schema:
+            type: string
+            default: today
+            title: Range
+        - name: doctor_id
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ""
+            title: Doctor Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/auth/forgot-password:
+    post:
+      summary: Forgot Password
+      description: |
+        Always return 200 — never reveal whether the email is registered.
+        If found, generate a one-time reset token valid for 1 hour.
+      operationId: forgot_password_api_auth_forgot_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/auth/reset-password:
+    post:
+      summary: Reset Password
+      description: |
+        Validate the reset token, update the user's password, mark the token as used,
+        and return a fresh JWT so the user is auto-logged-in.
+      operationId: reset_password_api_auth_reset_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/bookings/{booking_id}/directions:
+    get:
+      summary: Get Directions
+      description: |
+        Return in-hospital directions for a patient's booking.
+        Only available when booking status is 'arrived' or 'in_consult'.
+      operationId: get_directions_api_bookings__booking_id__directions_get
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/reception/verify-qr:
+    get:
+      summary: Verify Qr
+      description: |
+        Verify a patient's QR code token. Returns the associated booking.
+        Available to any authenticated user (reception, doctor, etc.).
+      operationId: verify_qr_api_reception_verify_qr_get
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+            description: QR JWT token to verify
+            title: Token
+          description: QR JWT token to verify
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/reception/hospital/map:
+    post:
+      summary: Upload Hospital Map
+      description: |
+        Upload a hospital floor map image (jpg/png/webp/svg, max 2 MB).
+        Saves to backend/uploads/maps/ and updates HOSPITAL_META in-memory.
+        Note: map_image_url persists only for the current server session.
+      operationId: upload_hospital_map_api_reception_hospital_map_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/Body_upload_hospital_map_api_reception_hospital_map_post"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/uploads/maps/{filename}:
+    get:
+      summary: Get Map
+      description: Serve uploaded hospital map images (public endpoint).
+      operationId: get_map_api_uploads_maps__filename__get
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Filename
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/location:
+    patch:
+      summary: Update Doctor Location
+      description: |
+        Update a doctor's cabin, floor, landmark, and map pin coordinates.
+        Also backfills default direction fields if the doctor has none set.
+      operationId: update_doctor_location_api_doctor_location_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DoctorLocationIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctors/{doctor_id}/slots/v2:
+    get:
+      summary: Doctor Slots V2
+      description: |
+        Public endpoint: returns available 15-min slots for a doctor on a given date.
+        Uses doctor's weekly_schedule and blocked_dates.
+      operationId: doctor_slots_v2_api_doctors__doctor_id__slots_v2_get
+      parameters:
+        - name: doctor_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Doctor Id
+        - name: date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: null
+            title: Date
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/profile:
+    get:
+      summary: Get Doctor Profile
+      description: Return the current doctor's full profile (no password).
+      operationId: get_doctor_profile_api_doctor_profile_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+    patch:
+      summary: Patch Doctor Profile
+      description: Update doctor's profile fields. Only provided (non-None) fields are updated.
+      operationId: patch_doctor_profile_api_doctor_profile_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfilePatch"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/schedule:
+    put:
+      summary: Update Doctor Schedule
+      description: Update doctor's weekly schedule. Keys must be mon/tue/wed/thu/fri/sat/sun.
+      operationId: update_doctor_schedule_api_doctor_schedule_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/blocked-dates:
+    put:
+      summary: Update Blocked Dates
+      description: Update doctor's blocked dates (days they are unavailable).
+      operationId: update_blocked_dates_api_doctor_blocked_dates_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlockedDatesIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/uploads/doctor-avatar:
+    post:
+      summary: Upload Doctor Avatar
+      description: Upload a doctor avatar image. Max 2 MB. Saved to backend/uploads/avatars/.
+      operationId: upload_doctor_avatar_api_uploads_doctor_avatar_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/Body_upload_doctor_avatar_api_uploads_doctor_avatar_post"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/uploads/avatars/{filename}:
+    get:
+      summary: Get Avatar
+      description: Serve uploaded avatar files.
+      operationId: get_avatar_api_uploads_avatars__filename__get
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Filename
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/family:
+    get:
+      summary: List Family Members
+      description: Return all non-deleted family members for the authenticated patient.
+      operationId: list_family_members_api_family_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+    post:
+      summary: Create Family Member
+      description: Add a new family member profile.
+      operationId: create_family_member_api_family_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FamilyMemberIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/family/{member_id}:
+    patch:
+      summary: Update Family Member
+      description: Update fields on an existing family member.
+      operationId: update_family_member_api_family__member_id__patch
+      parameters:
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Member Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FamilyMemberUpdate"
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+    delete:
+      summary: Delete Family Member
+      description: Soft-delete a family member by setting deleted_at.
+      operationId: delete_family_member_api_family__member_id__delete
+      parameters:
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Member Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/family/default:
+    get:
+      summary: Get Default Family Member
+      description: |
+        Return the is_self=True family member for this user.
+        If none exists, auto-create one from the user's name/phone.
+      operationId: get_default_family_member_api_family_default_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/public/hospitals/{hospital_id}:
+    get:
+      summary: Public Hospital Detail
+      description: |
+        Public endpoint — return hospital metadata, doctor list, last 5 reviews,
+        and unique specialties. No auth required.
+      operationId: public_hospital_detail_api_public_hospitals__hospital_id__get
+      parameters:
+        - name: hospital_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Hospital Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/public/hospitals:
+    get:
+      summary: Public List Hospitals
+      description: |
+        Public endpoint — return all hospitals with doctor counts and metadata.
+        No auth required.
+      operationId: public_list_hospitals_api_public_hospitals_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/reception/hospital/meta:
+    patch:
+      summary: Update Hospital Meta
+      description: |
+        Reception-only endpoint — update hospital metadata in-memory.
+        For MVP: persists only for the current server session.
+      operationId: update_hospital_meta_api_reception_hospital_meta_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HospitalMetaIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/auth/change-password:
+    post:
+      summary: Change Password
+      description: Change password for patient. Verifies current password before updating.
+      operationId: change_password_api_auth_change_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/auth/delete-account:
+    post:
+      summary: Delete Account
+      description: Soft-delete patient account. Anonymises PII, keeps booking records intact.
+      operationId: delete_account_api_auth_delete_account_post
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/wallet/transactions:
+    get:
+      summary: Wallet Transactions
+      description: Return up to 50 most recent wallet transactions and current balance.
+      operationId: wallet_transactions_api_wallet_transactions_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/uploads/avatar:
+    post:
+      summary: Upload Avatar
+      description: Upload a patient avatar image. Max 1 MB, jpg/png/webp only.
+      operationId: upload_avatar_api_uploads_avatar_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/Body_upload_avatar_api_uploads_avatar_post"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/wallet/topup:
+    post:
+      summary: Wallet Topup
+      description: Add money to the patient's wallet. Amount must be one of the allowed values.
+      operationId: wallet_topup_api_wallet_topup_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TopupIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/wallet/redeem:
+    post:
+      summary: Wallet Redeem
+      description: Redeem a promo code to credit the patient's wallet.
+      operationId: wallet_redeem_api_wallet_redeem_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedeemIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/internal/seed-promos:
+    post:
+      summary: Seed Promos
+      description: Idempotently upsert 3 demo promo codes.
+      operationId: seed_promos_api_internal_seed_promos_post
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/prescriptions/{id}/verify:
+    get:
+      summary: Verify Prescription
+      description: PUBLIC — no auth required. Returns minimal prescription validity info.
+      operationId: verify_prescription_api_prescriptions__id__verify_get
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/prescriptions/{id}/print-data:
+    get:
+      summary: Prescription Print Data
+      description: |
+        Auth required — patient owner OR writing doctor.
+        Returns full prescription with doctor signature, license, and credentials.
+      operationId: prescription_print_data_api_prescriptions__id__print_data_get
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/public/doctors/{doctor_id}:
+    get:
+      summary: Public Doctor Profile
+      description: |
+        Public endpoint — return full doctor profile, last 5 reviews,
+        up to 3 related doctors (same hospital), and hospital metadata.
+        No auth required.
+      operationId: public_doctor_profile_api_public_doctors__doctor_id__get
+      parameters:
+        - name: doctor_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Doctor Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/public/doctors/{doctor_id}/availability:
+    get:
+      summary: Public Doctor Availability
+      description: |
+        Public endpoint — return available 15-min time slots for a doctor on a given date.
+        Accepts ?date=YYYY-MM-DD (defaults to today).
+        No auth required.
+      operationId: public_doctor_availability_api_public_doctors__doctor_id__availability_get
+      parameters:
+        - name: doctor_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Doctor Id
+        - name: date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: null
+            title: Date
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/reviews:
+    post:
+      summary: Create Review
+      operationId: create_review_api_reviews_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctors/{doctor_id}/reviews:
+    get:
+      summary: Get Doctor Reviews
+      operationId: get_doctor_reviews_api_doctors__doctor_id__reviews_get
+      parameters:
+        - name: doctor_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Doctor Id
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 100
+            minimum: 1
+            default: 10
+            title: Limit
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+            title: Offset
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/hospitals/{hospital_id}/reviews:
+    get:
+      summary: Get Hospital Reviews
+      operationId: get_hospital_reviews_api_hospitals__hospital_id__reviews_get
+      parameters:
+        - name: hospital_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Hospital Id
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 100
+            minimum: 1
+            default: 10
+            title: Limit
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+            title: Offset
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/reviews/{review_id}/reply:
+    post:
+      summary: Reply To Review
+      operationId: reply_to_review_api_reviews__review_id__reply_post
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Review Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplyIn"
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/reviews/{review_id}/report:
+    post:
+      summary: Report Review
+      operationId: report_review_api_reviews__review_id__report_post
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Review Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/reviews:
+    get:
+      summary: Get My Doctor Reviews
+      operationId: get_my_doctor_reviews_api_doctor_reviews_get
+      parameters:
+        - name: rating
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: null
+            title: Rating
+        - name: responded
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: null
+            title: Responded
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 200
+            minimum: 1
+            default: 50
+            title: Limit
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+            title: Offset
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/prescriptions/{id}/messages:
+    get:
+      summary: Get Messages
+      operationId: get_messages_api_prescriptions__id__messages_get
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+    post:
+      summary: Post Message
+      operationId: post_message_api_prescriptions__id__messages_post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageIn"
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/prescriptions/{id}/messages/mark-read:
+    post:
+      summary: Mark Read
+      operationId: mark_read_api_prescriptions__id__messages_mark_read_post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/doctor/questions/unread:
+    get:
+      summary: Doctor Unread Questions
+      description: Return prescriptions written by this doctor that have unread patient messages.
+      operationId: doctor_unread_questions_api_doctor_questions_unread_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/uploads/rx-attachment:
+    post:
+      summary: Upload Rx Attachment
+      description: Upload a prescription attachment (jpg/png, max 3 MB).
+      operationId: upload_rx_attachment_api_uploads_rx_attachment_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/Body_upload_rx_attachment_api_uploads_rx_attachment_post"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/uploads/rx/{filename}:
+    get:
+      summary: Get Rx Attachment
+      operationId: get_rx_attachment_api_uploads_rx__filename__get
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Filename
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/search/doctors:
+    get:
+      summary: Search Doctors
+      description: |
+        Public endpoint — search/filter doctors by name, specialty, hospital, city.
+        Supports pagination and sort by rating (desc) or fee (asc).
+      operationId: search_doctors_api_search_doctors_get
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ""
+            title: Q
+        - name: city
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ""
+            title: City
+        - name: specialty
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            default:
+
+            title: Specialty
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            default: rating
+            title: Sort
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            title: Page
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 100
+            minimum: 1
+            default: 20
+            title: Limit
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/city-requests:
+    post:
+      summary: Create City Request
+      description: Public endpoint — log a user request for NirogPath to expand to a new city.
+      operationId: create_city_request_api_city_requests_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CityRequestIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/waitlist:
+    post:
+      summary: Join Waitlist
+      operationId: join_waitlist_api_waitlist_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WaitlistIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/waitlist/{waitlist_id}:
+    delete:
+      summary: Leave Waitlist
+      operationId: leave_waitlist_api_waitlist__waitlist_id__delete
+      parameters:
+        - name: waitlist_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Waitlist Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/waitlist/me:
+    get:
+      summary: My Waitlist
+      operationId: my_waitlist_api_waitlist_me_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/notifications:
+    get:
+      summary: Get Notifications
+      operationId: get_notifications_api_notifications_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/notifications/mark-all-read:
+    post:
+      summary: Mark All Notifications Read
+      operationId: mark_all_notifications_read_api_notifications_mark_all_read_post
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/notifications/{notification_id}/mark-read:
+    post:
+      summary: Mark Notification Read
+      operationId: mark_notification_read_api_notifications__notification_id__mark_read_post
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Notification Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/internal/notify-waitlist:
+    post:
+      summary: Internal Notify Waitlist
+      description: No auth — internal use only. Call from server.py's cancel flow.
+      operationId: internal_notify_waitlist_api_internal_notify_waitlist_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotifyWaitlistIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/reception/walkin:
+    post:
+      summary: Add Walkin
+      operationId: add_walkin_api_reception_walkin_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalkinIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/reception/transfer-candidates:
+    get:
+      summary: Transfer Candidates
+      operationId: transfer_candidates_api_reception_transfer_candidates_get
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+  /api/reception/offer-transfer:
+    post:
+      summary: Offer Transfer
+      operationId: offer_transfer_api_reception_offer_transfer_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfferTransferIn"
+        required: true
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/bookings/{booking_id}/accept-transfer:
+    post:
+      summary: Accept Transfer
+      operationId: accept_transfer_api_bookings__booking_id__accept_transfer_post
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /api/bookings/{booking_id}/decline-transfer:
+    post:
+      summary: Decline Transfer
+      operationId: decline_transfer_api_bookings__booking_id__decline_transfer_post
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Booking Id
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+
+        422:
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+components:
+  schemas:
+    RecommendIn:
+      properties:
+        description:
+          type: string
+          title: Symptom Description
+          description: Plain language description of patient symptoms and health concerns
+        city:
+          type: string
+          title: Preferred City
+          default: Bengaluru
+        guest_count:
+          type: integer
+          title: Guest Count
+          default: 1
+      required:
+        - description
+      type: object
+      title: RecommendIn
+    AIRecommendOut:
+      properties:
+        doctor:
+          type: object
+          title: Doctor Metadata
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            specialty:
+              type: string
+            rating:
+              type: number
+            fee:
+              type: integer
+            experience_years:
+              type: integer
+        reasoning:
+          type: string
+          title: Recommendation Reasoning
+        budget_warning:
+          type: string
+          nullable: true
+          title: Stated Budget Alert Warning
+      type: object
+      title: AIRecommendOut
+    QueueReviewOut:
+      properties:
+        summary:
+          type: string
+          title: Clinical Booking Summary
+        flags:
+          type: array
+          items:
+            type: string
+          title: Urgency & Clinical Flags
+        suggestion:
+          type: string
+          title: Suggested Immediate Action
+      type: object
+      title: QueueReviewOut
+    BlockedDatesIn:
+      properties:
+        blocked_dates:
+          items:
+            type: string
+          type: array
+          title: Blocked Dates
+      type: object
+      required:
+        - blocked_dates
+      title: BlockedDatesIn
+    Body_upload_avatar_api_uploads_avatar_post:
+      properties:
+        file:
+          type: string
+          format: binary
+          title: File
+      type: object
+      required:
+        - file
+      title: Body_upload_avatar_api_uploads_avatar_post
+    Body_upload_doctor_avatar_api_uploads_doctor_avatar_post:
+      properties:
+        file:
+          type: string
+          format: binary
+          title: File
+      type: object
+      required:
+        - file
+      title: Body_upload_doctor_avatar_api_uploads_doctor_avatar_post
+    Body_upload_hospital_map_api_reception_hospital_map_post:
+      properties:
+        file:
+          type: string
+          format: binary
+          title: File
+      type: object
+      required:
+        - file
+      title: Body_upload_hospital_map_api_reception_hospital_map_post
+    Body_upload_rx_attachment_api_uploads_rx_attachment_post:
+      properties:
+        file:
+          type: string
+          format: binary
+          title: File
+      type: object
+      required:
+        - file
+      title: Body_upload_rx_attachment_api_uploads_rx_attachment_post
+    BookingIn:
+      properties:
+        doctor_id:
+          type: string
+          title: Doctor Id
+        slot_time:
+          type: string
+          title: Slot Time
+        date:
+          anyOf:
+            - type: string
+            - type: null
+          title: Date
+      type: object
+      required:
+        - doctor_id
+        - slot_time
+      title: BookingIn
+    ChangePasswordIn:
+      properties:
+        current_password:
+          type: string
+          title: Current Password
+        new_password:
+          type: string
+          title: New Password
+      type: object
+      required:
+        - current_password
+        - new_password
+      title: ChangePasswordIn
+    CityRequestIn:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        city:
+          type: string
+          title: City
+      type: object
+      required:
+        - email
+        - city
+      title: CityRequestIn
+    CreateDoctorIn:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        password:
+          type: string
+          minLength: 6
+          title: Password
+        name:
+          type: string
+          title: Name
+        specialty:
+          type: string
+          title: Specialty
+        hospital:
+          type: string
+          title: Hospital
+        fee:
+          type: integer
+          title: Fee
+          default: 500
+        experience_years:
+          type: integer
+          title: Experience Years
+          default: 5
+        rating:
+          type: number
+          title: Rating
+          default: 4.8
+        avatar:
+          anyOf:
+            - type: string
+            - type: null
+          title: Avatar
+          default: ""
+        phone:
+          anyOf:
+            - type: string
+            - type: null
+          title: Phone
+          default: ""
+      type: object
+      required:
+        - email
+        - password
+        - name
+        - specialty
+        - hospital
+      title: CreateDoctorIn
+    CreateHospitalIn:
+      properties:
+        name:
+          type: string
+          title: Name
+        city:
+          type: string
+          title: City
+        area:
+          type: string
+          title: Area
+        rating:
+          type: number
+          title: Rating
+          default: 4.5
+        reviews:
+          type: integer
+          title: Reviews
+          default: 0
+        image:
+          anyOf:
+            - type: string
+            - type: null
+          title: Image
+          default: ""
+        tags:
+          items:
+            type: string
+          type: array
+          title: Tags
+          default:
+
+        specialties:
+          items:
+            type: string
+          type: array
+          title: Specialties
+          default:
+
+        min_fee:
+          type: number
+          title: Min Fee
+          default: 500.0
+      type: object
+      required:
+        - name
+        - city
+        - area
+      title: CreateHospitalIn
+    DoctorLocationIn:
+      properties:
+        cabin:
+          anyOf:
+            - type: string
+            - type: null
+          title: Cabin
+        floor:
+          anyOf:
+            - type: string
+            - type: null
+          title: Floor
+        landmark:
+          anyOf:
+            - type: string
+            - type: null
+          title: Landmark
+        map_x:
+          anyOf:
+            - type: number
+            - type: null
+          title: Map X
+        map_y:
+          anyOf:
+            - type: number
+            - type: null
+          title: Map Y
+      type: object
+      title: DoctorLocationIn
+    FamilyMemberIn:
+      properties:
+        name:
+          type: string
+          title: Name
+        relationship:
+          type: string
+          title: Relationship
+        gender:
+          anyOf:
+            - type: string
+            - type: null
+          title: Gender
+        dob:
+          anyOf:
+            - type: string
+            - type: null
+          title: Dob
+        phone:
+          anyOf:
+            - type: string
+            - type: null
+          title: Phone
+        avatar_url:
+          anyOf:
+            - type: string
+            - type: null
+          title: Avatar Url
+      type: object
+      required:
+        - name
+        - relationship
+      title: FamilyMemberIn
+    FamilyMemberUpdate:
+      properties:
+        name:
+          anyOf:
+            - type: string
+            - type: null
+          title: Name
+        relationship:
+          anyOf:
+            - type: string
+            - type: null
+          title: Relationship
+        gender:
+          anyOf:
+            - type: string
+            - type: null
+          title: Gender
+        dob:
+          anyOf:
+            - type: string
+            - type: null
+          title: Dob
+        phone:
+          anyOf:
+            - type: string
+            - type: null
+          title: Phone
+        avatar_url:
+          anyOf:
+            - type: string
+            - type: null
+          title: Avatar Url
+      type: object
+      title: FamilyMemberUpdate
+    ForgotPasswordIn:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+      type: object
+      required:
+        - email
+      title: ForgotPasswordIn
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: "#/components/schemas/ValidationError"
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HospitalMetaIn:
+      properties:
+        phone:
+          anyOf:
+            - type: string
+            - type: null
+          title: Phone
+        address:
+          anyOf:
+            - type: string
+            - type: null
+          title: Address
+        opening_hours:
+          anyOf:
+            - additionalProperties: true
+              type: object
+            - type: null
+          title: Opening Hours
+      type: object
+      title: HospitalMetaIn
+    LateIn:
+      properties:
+        running_late:
+          type: boolean
+          title: Running Late
+        delay_minutes:
+          type: integer
+          title: Delay Minutes
+          default: 40
+      type: object
+      required:
+        - running_late
+      title: LateIn
+    LoginIn:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        password:
+          type: string
+          title: Password
+      type: object
+      required:
+        - email
+        - password
+      title: LoginIn
+    MedicationIn:
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Name
+        dose:
+          type: string
+          minLength: 1
+          title: Dose
+        frequency:
+          type: string
+          title: Frequency
+        food_instructions:
+          type: string
+          title: Food Instructions
+          default: any
+        duration_days:
+          type: integer
+          maximum: 365.0
+          minimum: 1.0
+          title: Duration Days
+          default: 5
+      type: object
+      required:
+        - name
+        - dose
+        - frequency
+      title: MedicationIn
+    MessageIn:
+      properties:
+        body:
+          type: string
+          maxLength: 500
+          title: Body
+          default: ""
+        attachment_url:
+          anyOf:
+            - type: string
+            - type: null
+          title: Attachment Url
+      type: object
+      title: MessageIn
+    NotifyWaitlistIn:
+      properties:
+        doctor_id:
+          type: string
+          title: Doctor Id
+        date:
+          type: string
+          title: Date
+        slot_time:
+          type: string
+          title: Slot Time
+      type: object
+      required:
+        - doctor_id
+        - date
+        - slot_time
+      title: NotifyWaitlistIn
+    OfferTransferIn:
+      properties:
+        booking_id:
+          type: string
+          title: Booking Id
+        target_doctor_id:
+          type: string
+          title: Target Doctor Id
+      type: object
+      required:
+        - booking_id
+        - target_doctor_id
+      title: OfferTransferIn
+    PrescriptionIn:
+      properties:
+        medications:
+          items:
+            $ref: "#/components/schemas/MedicationIn"
+          type: array
+          title: Medications
+        notes:
+          anyOf:
+            - type: string
+            - type: null
+          title: Notes
+          default: ""
+      type: object
+      required:
+        - medications
+      title: PrescriptionIn
+    ProfilePatch:
+      properties:
+        bio:
+          anyOf:
+            - type: string
+            - type: null
+          title: Bio
+        credentials:
+          anyOf:
+            - items:
+                type: string
+              type: array
+            - type: null
+          title: Credentials
+        languages:
+          anyOf:
+            - items:
+                type: string
+              type: array
+            - type: null
+          title: Languages
+        fee:
+          anyOf:
+            - type: integer
+            - type: null
+          title: Fee
+        avatar_url:
+          anyOf:
+            - type: string
+            - type: null
+          title: Avatar Url
+        cabin:
+          anyOf:
+            - type: string
+            - type: null
+          title: Cabin
+        floor:
+          anyOf:
+            - type: string
+            - type: null
+          title: Floor
+        landmark:
+          anyOf:
+            - type: string
+            - type: null
+          title: Landmark
+        signature_url:
+          anyOf:
+            - type: string
+            - type: null
+          title: Signature Url
+        license_number:
+          anyOf:
+            - type: string
+            - type: null
+          title: License Number
+      type: object
+      title: ProfilePatch
+    ProfileUpdateIn:
+      properties:
+        name:
+          anyOf:
+            - type: string
+            - type: null
+          title: Name
+        phone:
+          anyOf:
+            - type: string
+            - type: null
+          title: Phone
+        dob:
+          anyOf:
+            - type: string
+            - type: null
+          title: Dob
+        gender:
+          anyOf:
+            - type: string
+            - type: null
+          title: Gender
+        avatar_url:
+          anyOf:
+            - type: string
+            - type: null
+          title: Avatar Url
+        preferred_language:
+          anyOf:
+            - type: string
+            - type: null
+          title: Preferred Language
+      type: object
+      title: ProfileUpdateIn
+    RedeemIn:
+      properties:
+        code:
+          type: string
+          title: Code
+      type: object
+      required:
+        - code
+      title: RedeemIn
+    RegisterIn:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        password:
+          type: string
+          minLength: 6
+          title: Password
+        name:
+          type: string
+          title: Name
+        phone:
+          anyOf:
+            - type: string
+            - type: null
+          title: Phone
+      type: object
+      required:
+        - email
+        - password
+        - name
+      title: RegisterIn
+    ReplyIn:
+      properties:
+        reply:
+          type: string
+          maxLength: 240
+          title: Reply
+      type: object
+      required:
+        - reply
+      title: ReplyIn
+    ResetPasswordIn:
+      properties:
+        token:
+          type: string
+          title: Token
+        new_password:
+          type: string
+          title: New Password
+      type: object
+      required:
+        - token
+        - new_password
+      title: ResetPasswordIn
+    ReviewIn:
+      properties:
+        booking_id:
+          type: string
+          title: Booking Id
+        rating:
+          type: integer
+          maximum: 5.0
+          minimum: 1.0
+          title: Rating
+        body:
+          anyOf:
+            - type: string
+              maxLength: 280
+            - type: null
+          title: Body
+        tags:
+          anyOf:
+            - items:
+                type: string
+              type: array
+            - type: null
+          title: Tags
+      type: object
+      required:
+        - booking_id
+        - rating
+      title: ReviewIn
+    ScheduleIn:
+      properties:
+        weekly_schedule:
+          additionalProperties: true
+          type: object
+          title: Weekly Schedule
+      type: object
+      required:
+        - weekly_schedule
+      title: ScheduleIn
+    TakeDoseIn:
+      properties:
+        prescription_id:
+          type: string
+          title: Prescription Id
+        med_index:
+          type: integer
+          title: Med Index
+        time:
+          type: string
+          title: Time
+      type: object
+      required:
+        - prescription_id
+        - med_index
+        - time
+      title: TakeDoseIn
+    TopupIn:
+      properties:
+        amount:
+          type: integer
+          title: Amount
+      type: object
+      required:
+        - amount
+      title: TopupIn
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
+    WaitlistIn:
+      properties:
+        doctor_id:
+          type: string
+          title: Doctor Id
+        date:
+          type: string
+          title: Date
+        slot_time:
+          type: string
+          title: Slot Time
+      type: object
+      required:
+        - doctor_id
+        - date
+        - slot_time
+      title: WaitlistIn
+    WalkinIn:
+      properties:
+        patient_name:
+          type: string
+          title: Patient Name
+        phone:
+          type: string
+          title: Phone
+        doctor_id:
+          type: string
+          title: Doctor Id
+        urgency:
+          type: string
+          title: Urgency
+          default: routine
+      type: object
+      required:
+        - patient_name
+        - phone
+        - doctor_id
+      title: WalkinIn
