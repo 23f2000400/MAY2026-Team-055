@@ -100,10 +100,11 @@ export default function DashboardShell({ children, roles, title, subtitle, onRef
             <button
               onClick={logout}
               data-testid="logout-btn"
-              className="w-10 h-10 rounded-full border border-subtle grid place-items-center hover:border-saffron hover:text-saffron transition text-charcoal-soft"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-full border border-subtle hover:border-saffron hover:text-saffron transition text-charcoal-soft text-sm font-medium"
               aria-label="Logout"
             >
               <LogOut className="w-4 h-4" strokeWidth={1.8} />
+              <span>Logout</span>
             </button>
           </div>
         </div>
