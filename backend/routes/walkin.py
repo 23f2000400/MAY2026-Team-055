@@ -157,7 +157,7 @@ async def transfer_candidates(user: dict = Depends(require_role("reception"))):
 # ---------- Offer transfer ----------
 
 @router.post("/reception/offer-transfer")
-async def offer_transfer(body: OfferTransferIn, user: dict = Depends(require_role("reception"))):
+async def offer_transfer(body: OfferTransferIn, user: dict = Depends(require_role("reception", "admin"))):
     booking = await db.bookings.find_one({"id": body.booking_id}, {"_id": 0})
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")

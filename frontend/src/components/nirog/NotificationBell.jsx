@@ -140,6 +140,11 @@ export default function NotificationBell() {
                           {notif.payload?.slot_time} slot is now available
                         </p>
                       )}
+                      {notif.kind === 'transfer_offer' && (
+                        <p className="font-body text-xs text-charcoal-soft mt-0.5">
+                          Earlier slot available with {notif.payload?.target_doctor_name || "another doctor"}
+                        </p>
+                      )}
                       <p className="font-mono text-xs text-charcoal-soft/60 mt-1">{formatTime(notif.created_at)}</p>
 
                       {notif.kind === 'slot_opened' && (
@@ -149,6 +154,26 @@ export default function NotificationBell() {
                           className="mt-2 px-4 py-1.5 rounded-full bg-saffron text-white text-xs font-body hover:bg-saffron-hover transition-colors"
                         >
                           Book now →
+                        </button>
+                      )}
+                      {notif.kind === 'transfer_offer' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetchApi(`/api/bookings/${notif.payload?.booking_id}/accept-transfer`, {
+                                method: 'POST',
+                              });
+                              if (res.ok) {
+                                markRead(notif.id);
+                                setOpen(false);
+                                window.location.reload();
+                              }
+                            } catch (e) {}
+                          }}
+                          data-testid={`notification-accept-transfer-${notif.id}`}
+                          className="mt-2 px-4 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-body hover:bg-emerald-700 transition-colors"
+                        >
+                          Accept transfer →
                         </button>
                       )}
                     </div>

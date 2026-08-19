@@ -87,7 +87,6 @@ export default function Login() {
                 </button>
               ))}
             </div>
-            <div className="text-xs text-bone/50 mt-3">password: nirog1234</div>
           </div>
         </div>
 
