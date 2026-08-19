@@ -47,6 +47,9 @@ function App() {
               <Route path="/doctors/:id" element={<DoctorPublicProfile />} />
               <Route path="/hospitals/:id" element={<HospitalPublicDetail />} />
               <Route path="/print/:prescriptionId" element={<PrintPrescription />} />
+              <Route path="/app/patient/prescriptions/:id/print" element={<PrintPrescription />} />
+              <Route path="/app/patient/prescriptions/:id" element={<PrintPrescription />} />
+              <Route path="/app/patient/prescriptions" element={<Medicines />} />
               <Route path="/app/patient" element={<PatientDashboard />} />
               <Route path="/app/patient/book" element={<BookingFlow />} />
               <Route path="/app/patient/queue" element={<LiveQueueStatus />} />

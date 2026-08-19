@@ -4,7 +4,7 @@ import time
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://prescription-hub-87.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "http://127.0.0.1:8000").rstrip("/")
 API = f"{BASE_URL}/api"
 
 PATIENT = ("patient@nirog.in", "nirog1234")

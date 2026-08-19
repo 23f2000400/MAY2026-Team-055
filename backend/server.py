@@ -1,9 +1,11 @@
 import os
+import sys
 import secrets
 from dotenv import load_dotenv
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent
+sys.path.insert(0, str(ROOT_DIR))
 load_dotenv(ROOT_DIR / ".env")
 
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, status

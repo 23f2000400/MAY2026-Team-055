@@ -21,7 +21,8 @@ function formatDate(isoString) {
 }
 
 export default function PrintPrescription() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params.id || params.prescriptionId;
   const [prescription, setPrescription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,6 +32,11 @@ export default function PrintPrescription() {
   const credentials = prescription?.doctor_credentials || [];
 
   const fetchPrintData = useCallback(async () => {
+    if (!id) {
+      setError("No prescription specified.");
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetchApi(`/api/prescriptions/${id}/print-data`);
       if (res.status === 404 || res.status === 403) {

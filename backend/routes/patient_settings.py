@@ -112,7 +112,10 @@ async def delete_account(
 async def wallet_transactions(
     user: dict = Depends(require_role("patient")),
 ):
-    """Return wallet transaction history derived from booking records."""
+    """Return wallet transaction history derived from booking records and live balance."""
+    current_user = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1})
+    current_balance = current_user.get("wallet_balance", user.get("wallet_balance", 0)) if current_user else user.get("wallet_balance", 0)
+
     bookings = (
         await db.bookings.find({"patient_id": user["id"]}, {"_id": 0})
         .sort("created_at", -1)
@@ -140,7 +143,7 @@ async def wallet_transactions(
             })
 
     sorted_transactions = sorted(transactions, key=lambda x: x["date"], reverse=True)
-    return {"transactions": sorted_transactions}
+    return {"transactions": sorted_transactions, "balance": current_balance, "wallet_balance": current_balance}
 
 
 # ---------- POST /api/uploads/avatar ----------

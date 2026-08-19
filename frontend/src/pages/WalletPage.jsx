@@ -24,10 +24,10 @@ function formatDate(iso) {
 }
 
 export default function WalletPage() {
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
 
-  // Balance & transactions state
-  const [balance, setBalance] = useState(0);
+  // Balance & transactions state (initialized from auth session)
+  const [balance, setBalance] = useState(user?.wallet_balance ?? 0);
   const [transactions, setTransactions] = useState([]);
   const [txLoading, setTxLoading] = useState(true);
 
@@ -41,12 +41,23 @@ export default function WalletPage() {
   const [redeemLoading, setRedeemLoading] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState(null); // { type: "success"|"error", text }
 
+  // Synchronize state when user changes
+  useEffect(() => {
+    if (user?.wallet_balance !== undefined && user?.wallet_balance !== null) {
+      setBalance(user.wallet_balance);
+    }
+  }, [user?.wallet_balance]);
+
   const loadTransactions = useCallback(async () => {
     setTxLoading(true);
     try {
       const { data } = await api.get("/wallet/transactions");
       setTransactions(data.transactions || []);
-      setBalance(data.balance ?? 0);
+      if (data.balance !== undefined && data.balance !== null) {
+        setBalance(data.balance);
+      } else if (data.wallet_balance !== undefined && data.wallet_balance !== null) {
+        setBalance(data.wallet_balance);
+      }
     } catch (e) {
       // silently ignore (logged out race)
     } finally {

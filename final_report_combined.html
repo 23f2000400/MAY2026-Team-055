@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Final Report (Combined) - NirogPath Lite</title>
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 14mm 16mm 14mm;
+  }
+  @page:first {
+    margin-top: 20mm;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.5;
+    font-size: 12px;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+  }
+  
+  /* Title & Covers */
+  .cover-section {
+    text-align: center;
+    padding: 30px 20px 25px 20px;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 25px;
+  }
+  .doc-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+  .doc-subtitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2563eb;
+    margin-bottom: 18px;
+  }
+  .doc-meta {
+    display: inline-block;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 24px;
+    text-align: center;
+  }
+  .meta-team {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 6px;
+  }
+  .meta-members {
+    font-size: 11.5px;
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  /* Headings */
+  h1.milestone-heading {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 3px solid #2563eb;
+    padding-bottom: 6px;
+    margin-top: 25px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  h2 {
+    font-size: 16.5px;
+    font-weight: 700;
+    color: #0f172a;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-bottom: 5px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 14px;
+    margin-bottom: 5px;
+  }
+  h4 {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #334155;
+    margin-top: 10px;
+    margin-bottom: 3px;
+  }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #334155;
+    text-align: justify;
+  }
+  ul, ol {
+    margin-top: 4px;
+    margin-bottom: 8px;
+    padding-left: 20px;
+  }
+  li {
+    margin-bottom: 3px;
+    color: #334155;
+  }
+
+  /* Badges & Pills */
+  .badge {
+    display: inline-block;
+    padding: 2.5px 7px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .badge-primary {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+  .badge-success {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+  }
+  .badge-warning {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+  }
+  .badge-danger {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+  }
+
+  /* Tables */
+  table.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    margin-bottom: 14px;
+    font-size: 11.5px;
+    background: #ffffff;
+  }
+  table.styled-table th {
+    background: #0f172a;
+    color: #ffffff;
+    font-weight: 700;
+    text-align: left;
+    padding: 6px 10px;
+    border: 1px solid #0f172a;
+  }
+  table.styled-table td {
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    vertical-align: top;
+  }
+  table.styled-table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  /* Cards & Callouts */
+  .card {
+    page-break-inside: avoid;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .route-badge {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 11px;
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    display: inline-block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .field-label {
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 5px;
+    margin-bottom: 2px;
+    font-size: 11.5px;
+  }
+
+  /* Code Block */
+  pre.code-block {
+    background-color: #0d1117;
+    color: #e6edf3;
+    padding: 8px 10px;
+    border-radius: 5px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 10.5px;
+    line-height: 1.4;
+    overflow-x: auto;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    border: 1px solid #30363d;
+  }
+  .kw { color: #ff7b72; font-weight: bold; }
+  .str { color: #a5d6ff; }
+  .fn { color: #d2a8ff; }
+  .cm { color: #8b949e; font-style: italic; }
+  .num { color: #79c0ff; }
+
+  /* Info / Alert Boxes */
+  .bug-box {
+    page-break-inside: avoid;
+    background: #fff5f5;
+    border-left: 4px solid #ef4444;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-radius: 0 5px 5px 0;
+  }
+  .improvement-box {
+    page-break-inside: avoid;
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-radius: 0 5px 5px 0;
+  }
+  .note-box {
+    page-break-inside: avoid;
+    background: #f8fafc;
+    border-left: 4px solid #3b82f6;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-radius: 0 5px 5px 0;
+  }
+
+  /* UI Screenshots & Mockups */
+  .screenshot-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .ui-screenshot-card {
+    page-break-inside: avoid;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  }
+  .ui-screenshot-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 6px 12px;
+    font-weight: 700;
+    font-size: 11.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ui-browser-bar {
+    background: #f1f5f9;
+    padding: 4px 10px;
+    font-size: 10.5px;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: monospace;
+  }
+  .ui-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .ui-dot-red { background: #ef4444; }
+  .ui-dot-yellow { background: #f59e0b; }
+  .ui-dot-green { background: #10b981; }
+  .ui-screenshot-body {
+    padding: 12px;
+    background: #fafafa;
+  }
+
+  /* Diagram Box */
+  .diagram-box {
+    page-break-inside: avoid;
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 10.5px;
+    line-height: 1.35;
+    margin-bottom: 14px;
+    border: 1px solid #334155;
+    overflow-x: auto;
+  }
+
+  /* Page Break */
+  .page-break {
+    page-break-before: always;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ========================================================= -->
+  <!-- COVER / TITLE SECTION -->
+  <!-- ========================================================= -->
+  <div class="cover-section">
+    <div class="doc-title">NirogPath Lite</div>
+    <div class="doc-subtitle">Comprehensive Final Project Report (Milestones 1 – 5)</div>
+    <p style="font-size: 13px; color: #475569; max-width: 680px; margin: 0 auto 12px auto;">
+      A Lightweight Hospital Appointment, Real-Time OPD Queue Tracking, Digital Prescription, and RAG AI Healthcare Platform
+    </p>
+    <div class="doc-meta">
+      <div class="meta-team">TEAM 055 — MAY–AUG 2026 BATCH</div>
+      <div class="meta-members">
+        <strong>Piyush Gupta</strong> (23F2000400) &nbsp;|&nbsp; 
+        <strong>Yash Tripathi</strong> (22F1000614) &nbsp;|&nbsp; 
+        <strong>Harshvi Saini</strong> (21F3002418)<br>
+        <strong>Kaustubh Singh</strong> (21F3002304) &nbsp;|&nbsp; 
+        <strong>Vootakoti Devaharshini</strong> (23F3001285)<br>
+        <em>IIT Madras BS Degree Programme in Data Science & Applications</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- TIMELINE AT A GLANCE -->
+  <!-- ========================================================= -->
+  <h2>Project Execution Timeline</h2>
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 15%;">Milestone</th>
+        <th style="width: 25%;">Phase Name</th>
+        <th style="width: 25%;">Start Date</th>
+        <th style="width: 20%;">Submission Due</th>
+        <th style="width: 15%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Milestone 1</strong></td>
+        <td>User Requirements Analysis & Identification</td>
+        <td>18 Jun 2026</td>
+        <td>28 Jun 2026</td>
+        <td><span class="badge badge-success">Completed</span></td>
+      </tr>
+      <tr>
+        <td><strong>Milestone 2</strong></td>
+        <td>System Design, Component Planning & UI</td>
+        <td>29 Jun 2026</td>
+        <td>23 Jul 2026</td>
+        <td><span class="badge badge-success">Completed</span></td>
+      </tr>
+      <tr>
+        <td><strong>Milestone 3</strong></td>
+        <td>Sprint 1 Test Report & API Verification</td>
+        <td>24 Jul 2026</td>
+        <td>03 Aug 2026</td>
+        <td><span class="badge badge-success">Completed</span></td>
+      </tr>
+      <tr>
+        <td><strong>Milestone 4</strong></td>
+        <td>Sprint 2 Report (AI Features & Edge Cases)</td>
+        <td>04 Aug 2026</td>
+        <td>12 Aug 2026</td>
+        <td><span class="badge badge-success">Completed</span></td>
+      </tr>
+      <tr>
+        <td><strong>Milestone 5</strong></td>
+        <td>Tools, Issue Tracking & Final Combined Release</td>
+        <td>13 Aug 2026</td>
+        <td>23 Aug 2026</td>
+        <td><span class="badge badge-success">Completed</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ========================================================= -->
+  <!-- MILESTONE 1: USER REQUIREMENTS ANALYSIS -->
+  <!-- ========================================================= -->
+  <h1 class="milestone-heading">Milestone 1 — User Requirements Analysis</h1>
+
+  <h2>1.1 Introduction</h2>
+  <p>
+    Healthcare outpatient departments (OPDs) in Indian hospitals frequently struggle with severe operational friction: unpredictable waiting 
+    room delays (often 45 to 90+ minutes), zero visibility into queue progression, illegible paper prescriptions, and uncoordinated walk-in arrivals 
+    that disrupt booked consultation schedules. These bottlenecks cause high patient anxiety, doctor fatigue, and heavy receptionist workload.
+  </p>
+  <p>
+    <strong>NirogPath Lite</strong> is a lightweight, responsive hospital appointment and digital OPD queue platform engineered to solve these exact challenges. 
+    It enables patients to discover specialists, book slots online, track their live queue position, and access structured digital prescriptions. 
+    For clinical staff, it automates patient queue advancement with one-click calling, provides AI symptom triage summaries, and gives receptionists rapid walk-in registration kiosks.
+  </p>
+
+  <h2>1.2 Stakeholder Identification & Personas</h2>
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 20%;">Category</th>
+        <th style="width: 25%;">Representative Persona</th>
+        <th>Responsibilities, Core Needs & Goals</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Primary Users</strong></td>
+        <td><strong>Ram Krishna Pandey</strong><br><em>Regular OPD Patient</em></td>
+        <td>Direct beneficiaries who search specialist doctors, book consultation slots, pay wallet deposits, monitor real-time token queues, and access digital prescriptions with medication reminders.</td>
+      </tr>
+      <tr>
+        <td><strong>Secondary Users</strong></td>
+        <td><strong>Ms. Swapna</strong><br><em>Hospital Receptionist</em></td>
+        <td>Front-desk hospital staff who register walk-in patients, verify physical arrivals of pre-booked patients, issue token slips, and guide patients without mobile access.</td>
+      </tr>
+      <tr>
+        <td><strong>Tertiary Users</strong></td>
+        <td><strong>Dr. Neera Sharma</strong><br><em>Consulting Physician</em></td>
+        <td>Specialists conducting OPD consultations, calling next tokens with one click, reviewing AI queue summaries, broadcasting delay alerts, and generating structured e-prescriptions.</td>
+      </tr>
+      <tr>
+        <td><strong>Tertiary Users</strong></td>
+        <td><strong>Hospital Administrator</strong><br><em>Operations Lead</em></td>
+        <td>Hospital management overseeing doctor schedules, department configurations, appointment statistics, average wait time reports, and financial audit ledgers.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>1.3 Pain Point Analysis & Impact Matrix</h2>
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 18%;">Stakeholder</th>
+        <th style="width: 38%;">Identified Pain Point</th>
+        <th>Operational & Clinical Impact</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Patient</td>
+        <td>Long waiting times exceeding 45–90 minutes</td>
+        <td>Uncertainty regarding consultation timing, overcrowding in waiting halls.</td>
+      </tr>
+      <tr>
+        <td>Patient</td>
+        <td>Total lack of queue progression visibility</td>
+        <td>Anxiety while waiting, multiple visits to the reception desk for updates.</td>
+      </tr>
+      <tr>
+        <td>Patient</td>
+        <td>Illegible handwritten paper prescriptions</td>
+        <td>Confusion about dosage timings, missing food precautions, delayed recovery.</td>
+      </tr>
+      <tr>
+        <td>Doctor</td>
+        <td>Manual patient queue management</td>
+        <td>Wasted clinical consultation time calling patients and coordinating files.</td>
+      </tr>
+      <tr>
+        <td>Doctor</td>
+        <td>Unannounced walk-in patient disruptions</td>
+        <td>Severe schedule delays and disruption to pre-booked appointment slots.</td>
+      </tr>
+      <tr>
+        <td>Receptionist</td>
+        <td>Overwhelming volume of repetitive queue queries</td>
+        <td>Decreased productivity, telephone bottlenecks, and increased human error.</td>
+      </tr>
+      <tr>
+        <td>Administrator</td>
+        <td>Lack of real-time operational visibility</td>
+        <td>Inability to balance doctor workloads or measure average clinic wait times.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>1.4 SMART User Stories</h2>
+  <p>The requirements were developed using the SMART framework (Specific, Measurable, Achievable, Relevant, Time-Bound):</p>
+  <ul>
+    <li><strong>US-P1:</strong> As a patient, I want to search doctors by specialty and fee, so that I can easily find the right medical specialist.</li>
+    <li><strong>US-P2:</strong> As a patient, I want to view available slots and book online with wallet deposit, so that my appointment is guaranteed.</li>
+    <li><strong>US-P3:</strong> As a patient, I want to view my live token queue position, so that I can estimate my consultation time accurately.</li>
+    <li><strong>US-P4:</strong> As a patient, I want to receive delay notifications from the doctor, so that I avoid sitting in crowded waiting halls unnecessarily.</li>
+    <li><strong>US-P5:</strong> As a patient, I want to access digital e-prescriptions online, so that I can read medication doses and schedules clearly.</li>
+    <li><strong>US-P6:</strong> As a patient, I want to query a RAG AI assistant about my prescribed medicines, so that I understand food precautions and side effects.</li>
+    <li><strong>US-D1:</strong> As a doctor, I want to see an ordered list of waiting patients, so that I know who to consult next.</li>
+    <li><strong>US-D2:</strong> As a doctor, I want to call the next patient digitally, so that the waiting room screen and patient app update instantly.</li>
+    <li><strong>US-D3:</strong> As a doctor, I want to generate structured digital prescriptions with standard frequency codes (OD, BID, TID, QID).</li>
+    <li><strong>US-D4:</strong> As a doctor, I want to see an AI-generated summary of patient symptoms and clinical flags before beginning consultation.</li>
+    <li><strong>US-R1:</strong> As a receptionist, I want to register walk-in patients quickly and issue token slips, so they are added to the live OPD queue.</li>
+    <li><strong>US-R2:</strong> As a receptionist, I want to verify patient arrivals at the clinic, so that doctors know which patients are physically present.</li>
+    <li><strong>US-A1:</strong> As an administrator, I want to manage doctor accounts, consultation fees, and hospital department schedules.</li>
+    <li><strong>US-A2:</strong> As an administrator, I want to monitor appointment statistics and wait-time analytics, so that hospital efficiency can be evaluated.</li>
+  </ul>
+
+  <h2>1.5 Requirement Traceability Matrix (RTM)</h2>
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 10%;">ID</th>
+        <th style="width: 35%;">Requirement Name</th>
+        <th style="width: 25%;">Target User Role</th>
+        <th style="width: 15%;">Priority</th>
+        <th style="width: 15%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>R1</td><td>Online Doctor Discovery & Slot Booking</td><td>Patient</td><td><span class="badge badge-danger">High (MVP)</span></td><td><span class="badge badge-success">Completed</span></td></tr>
+      <tr><td>R2</td><td>Real-Time Token Queue Position Tracking</td><td>Patient, Receptionist</td><td><span class="badge badge-danger">High (MVP)</span></td><td><span class="badge badge-success">Completed</span></td></tr>
+      <tr><td>R3</td><td>Digital E-Prescription System</td><td>Doctor, Patient</td><td><span class="badge badge-danger">High (MVP)</span></td><td><span class="badge badge-success">Completed</span></td></tr>
+      <tr><td>R4</td><td>Walk-in Patient Registration Kiosk</td><td>Receptionist</td><td><span class="badge badge-warning">Medium</span></td><td><span class="badge badge-success">Completed</span></td></tr>
+      <tr><td>R5</td><td>Doctor Delay & Turn Broadcast Alerts</td><td>Patient, Doctor</td><td><span class="badge badge-danger">High (MVP)</span></td><td><span class="badge badge-success">Completed</span></td></tr>
+      <tr><td>R6</td><td>Doctor OPD Queue Dashboard & Call-Next Flow</td><td>Doctor</td><td><span class="badge badge-danger">High (MVP)</span></td><td><span class="badge badge-success">Completed</span></td></tr>
+      <tr><td>R7</td><td>Admin Operational Analytics & Revenue Reports</td><td>Administrator</td><td><span class="badge badge-warning">Medium</span></td><td><span class="badge badge-success">Completed</span></td></tr>
+      <tr><td>R8</td><td>RAG AI Health & Prescription Q&A Assistant</td><td>Patient, Doctor</td><td><span class="badge badge-warning">Medium</span></td><td><span class="badge badge-success">Completed</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- ========================================================= -->
+  <!-- MILESTONE 2: SYSTEM ARCHITECTURE & COMPONENT DESIGN -->
+  <!-- ========================================================= -->
+  <h1 class="milestone-heading">Milestone 2 — System Architecture & Component Design</h1>
+
+  <h2>2.1 Component Architecture & Subsystems</h2>
+  <p>
+    NirogPath Lite is structured into four decoupled subsystems communicating over secure REST endpoints:
+  </p>
+  <ul>
+    <li><strong>Patient Portal & Mobile Web App:</strong> Handles doctor search, slot reservations, wallet deposits, real-time token tracking, and RAG prescription Q&A.</li>
+    <li><strong>Doctor Consultation Console:</strong> Real-time OPD queue dashboard, single-click patient calling, AI queue triage summary, delay announcer, and digital Rx generator.</li>
+    <li><strong>Receptionist Walk-in Kiosk:</strong> High-speed counter interface for rapid patient arrival check-in, offline walk-in booking, wallet top-up, and paper token slip generation.</li>
+    <li><strong>Administrator Analytics Hub:</strong> Doctor slot management, hospital metadata configuration, and OPD throughput metrics.</li>
+  </ul>
+
+  <h2>2.2 Class Diagram & Entity Relationships</h2>
+  <div class="diagram-box">
++----------------------------------------------------------------------------------------------------+
+|                                      CLASS DIAGRAM & DOMAIN MODEL                                  |
++----------------------------------------------------------------------------------------------------+
+|  +--------------------+        +---------------------+        +--------------------+               |
+|  |       User         | 1    * |       Booking       | *    1 |       Doctor       |               |
+|  |--------------------|--------|---------------------|--------|--------------------|               |
+|  | - id: UUID         |        | - id: UUID          |        | - id: UUID         |               |
+|  | - name: String     |        | - booking_ref: Str  |        | - name: String     |               |
+|  | - email: String    |        | - patient_id: UUID  |        | - specialty: Str   |               |
+|  | - role: RoleEnum   |        | - doctor_id: UUID   |        | - hospital_id: UUID|               |
+|  | - wallet: Float    |        | - slot_time: String |        | - fee: Float       |               |
+|  | - phone: String    |        | - token_num: Int    |        | - rating: Float    |               |
+|  +--------------------+        | - status: StatusEnum|        +--------------------+               |
+|                                | - deposit: Float    |                  | 1                        |
+|                                +---------------------+                  |                          |
+|                                           | 1                           | *                        |
+|                                           |                   +--------------------+               |
+|                                           | 1                 |      Hospital      |               |
+|                                +---------------------+        |--------------------|               |
+|                                |    Prescription     |        | - id: UUID         |               |
+|                                |---------------------|        | - name: String     |               |
+|                                | - id: UUID          |        | - city: String     |               |
+|                                | - booking_id: UUID  |        | - doctor_count: Int|               |
+|                                | - medications: List |        +--------------------+               |
+|                                | - diagnosis: String |                                             |
+|                                | - created_at: Date  |                                             |
+|                                +---------------------+                                             |
++----------------------------------------------------------------------------------------------------+
+  </div>
+
+  <h2>2.3 Database Schema (MongoDB Document Collections)</h2>
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 18%;">Collection</th>
+        <th style="width: 42%;">Document Fields & Types</th>
+        <th>Description & Indexing</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>users</code></td>
+        <td><code>id (UUID), name (str), email (str), password_hash (str), role (str), phone (str), wallet_balance (float), created_at (date)</code></td>
+        <td>Indexed on <code>email</code> (unique). Stores patient, doctor, receptionist, and admin credentials with bcrypt hashes.</td>
+      </tr>
+      <tr>
+        <td><code>doctors</code></td>
+        <td><code>id (UUID), user_id (UUID), name (str), specialty (str), hospital_id (UUID), fee (float), experience_years (int), rating (float), slots (list)</code></td>
+        <td>Indexed on <code>specialty</code> and <code>hospital_id</code>. Holds doctor clinical profiles and consultation availability.</td>
+      </tr>
+      <tr>
+        <td><code>hospitals</code></td>
+        <td><code>id (UUID), name (str), city (str), area (str), rating (float), reviews (int), doctor_count (int), specialties (list), min_fee (float)</code></td>
+        <td>Indexed on <code>city</code>. Directory of affiliated partner clinics and hospitals.</td>
+      </tr>
+      <tr>
+        <td><code>bookings</code></td>
+        <td><code>id (UUID), booking_ref (str), patient_id (UUID), doctor_id (UUID), slot_time (str), date (str), token_number (int), status (str), deposit_paid (float)</code></td>
+        <td>Indexed on <code>doctor_id + date + slot_time</code> (unique active). Status: <code>booked</code>, <code>arrived</code>, <code>in_consultation</code>, <code>completed</code>, <code>cancelled</code>.</td>
+      </tr>
+      <tr>
+        <td><code>prescriptions</code></td>
+        <td><code>id (UUID), booking_id (UUID), patient_id (UUID), doctor_id (UUID), diagnosis (str), medications (list), instructions (str), created_at (date)</code></td>
+        <td>Indexed on <code>patient_id</code> and <code>booking_id</code>. Contains structured medication items with frequency codes.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2.4 Detailed Sprint Schedule & Agile Timeline</h2>
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 14%;">Sprint #</th>
+        <th style="width: 24%;">Dates</th>
+        <th style="width: 38%;">Core Activities & Sprint Goal</th>
+        <th style="width: 24%;">Deliverables</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Sprint 1</strong></td>
+        <td>18/06/2026 – 28/06/2026</td>
+        <td>Requirement Analysis, Stakeholder Interviews, Persona Definition, SMART User Stories, RTM Matrix.</td>
+        <td>Milestone 1 PDF Report</td>
+      </tr>
+      <tr>
+        <td><strong>Sprint 2</strong></td>
+        <td>29/06/2026 – 23/07/2026</td>
+        <td>System Design, Component Specs, Class & ER Diagram, Frontend Page Building, Backend API Scaffolding.</td>
+        <td>Milestone 2 PDF & UI Mockups</td>
+      </tr>
+      <tr>
+        <td><strong>Sprint 3 (Test Cycle 1)</strong></td>
+        <td>24/07/2026 – 03/08/2026</td>
+        <td>Automated Testing of Core APIs, In-Memory Mongo DB, RBAC Verification, Edge-Case Defect Fixes, User Feedback.</td>
+        <td>Milestone 3 Sprint 1 Report</td>
+      </tr>
+      <tr>
+        <td><strong>Sprint 4 (Test Cycle 2)</strong></td>
+        <td>04/08/2026 – 12/08/2026</td>
+        <td>AI Features Implementation (RAG Chatbot, AI Recommender, Queue Review), Edge-Case Testing, 15 Pytest Suite.</td>
+        <td>Milestone 4 Sprint 2 Report</td>
+      </tr>
+      <tr>
+        <td><strong>Sprint 5 (Final Release)</strong></td>
+        <td>13/08/2026 – 23/08/2026</td>
+        <td>Tools Documentation, 36 GitHub Issues Audit, Final Combined Report & Presentation Deck.</td>
+        <td>Final Combined Report & PPTX</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2.5 Scrum Meetings & Minutes of Meetings (MoM)</h2>
+  <div class="note-box">
+    <strong>Milestone 1 TA Meeting (22/06/2026):</strong><br>
+    The team discussed outpatient department coordination bottlenecks with the Teaching Assistant. Evaluated existing queueing systems. Finalized NirogPath Lite scope, user personas (Ram Krishna Pandey, Ms. Swapna, Dr. Neera Sharma), and SMART user stories.
+  </div>
+  <div class="note-box">
+    <strong>Sprint 1 Standup & Requirements Finalization (25/06/2026):</strong><br>
+    Finalized Requirement Traceability Matrix (R1–R8) and mapped MVP core priorities (online booking, live queue tracker, digital prescriptions) versus operational enhancements (walk-in kiosk, analytics).
+  </div>
+  <div class="note-box">
+    <strong>Milestone 2 TA Design Review (10/07/2026):</strong><br>
+    Presented the modular system design, class diagram, and MongoDB document schemas. Approved the token deposit mechanism (₹200 deposit) and role-based access control (RBAC) boundaries.
+  </div>
+  <div class="note-box">
+    <strong>Sprint 2 Frontend-Backend Integration Meeting (16/07/2026):</strong><br>
+    Reviewed UI screen designs, booking wizard flow, and doctor queue dashboard. Verified seamless synchronization between patient queue updates and doctor call-next actions.
+  </div>
+  <div class="note-box">
+    <strong>Sprint 3 (Milestone 3) Test Review & Bug Triage (29/07/2026):</strong><br>
+    Reviewed results of the 10 core API tests. Triaged failing edge cases (prescription frequency validation 500 error, unauthorized prescription access). Logged bug fixes in GitHub Issues.
+  </div>
+  <div class="note-box">
+    <strong>Sprint 4 (Milestone 4) AI Feature Planning (06/08/2026):</strong><br>
+    Demonstrated working app to users. Received feedback requesting RAG prescription assistant, AI symptom recommender, and doctor queue review cards. Scheduled AI integration tasks.
+  </div>
+  <div class="note-box">
+    <strong>Sprint 5 (Milestone 5) Final Release Meeting (17/08/2026):</strong><br>
+    Audited all 36 closed GitHub issues, verified 100% test pass rate across pytest suites, and compiled the Final Combined Report and Project Presentation.
+  </div>
+
+  <div class="page-break"></div>
+
+  <h2>2.6 Frontend Interface Screenshots & Application Walkthrough</h2>
+  <p>
+    The following screenshots demonstrate the full range of implemented screens across Patient, Doctor, Receptionist, and Administrator portals:
+  </p>
+
+  <div class="screenshot-grid">
+    <!-- Screen 1: Home Landing Page -->
+    <div class="ui-screenshot-card">
+      <div class="ui-screenshot-header">
+        <span>Screen 1: NirogPath Home & Public Landing Page</span>
+        <span>Public Portal</span>
+      </div>
+      <div class="ui-browser-bar">
+        <span class="ui-dot ui-dot-red"></span><span class="ui-dot ui-dot-yellow"></span><span class="ui-dot ui-dot-green"></span>
+        <span>https://nirogpath.in/</span>
+      </div>
+      <div class="ui-screenshot-body">
+        <div style="background: #0f172a; color: #ffffff; padding: 18px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 800; color: #38bdf8;">Your Health, Zero Waiting Time</div>
+          <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 4px; max-width: 500px; margin-left: auto; margin-right: auto;">
+            Book verified specialist appointments, monitor your live OPD queue token from home, and access digital prescriptions anytime.
+          </div>
+          <div style="margin-top: 12px; display: flex; justify-content: center; gap: 8px;">
+            <span style="background: #2563eb; color: #ffffff; padding: 6px 14px; border-radius: 4px; font-weight: 700; font-size: 11px;">Find Doctors &rarr;</span>
+            <span style="background: #334155; color: #ffffff; padding: 6px 14px; border-radius: 4px; font-size: 11px;">Track Live Queue</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: Doctor Search & Discovery -->
+    <div class="ui-screenshot-card">
+      <div class="ui-screenshot-header">
+        <span>Screen 2: Doctor & Specialist Discovery with Filters</span>
+        <span>Patient Search View</span>
+      </div>
+      <div class="ui-browser-bar">
+        <span class="ui-dot ui-dot-red"></span><span class="ui-dot ui-dot-yellow"></span><span class="ui-dot ui-dot-green"></span>
+        <span>https://nirogpath.in/doctors?specialty=General+Physician&city=Bengaluru</span>
+      </div>
+      <div class="ui-screenshot-body">
+        <div style="display: flex; gap: 10px;">
+          <div style="width: 30%; background: #ffffff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px;">
+            <div style="font-size: 11px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Filters</div>
+            <div style="font-size: 11px; color: #475569;">Specialty: <strong>General Physician</strong></div>
+            <div style="font-size: 11px; color: #475569; margin-top: 3px;">Max Fee: <strong>&le; ₹800</strong></div>
+            <div style="font-size: 11px; color: #475569; margin-top: 3px;">City: <strong>Bengaluru</strong></div>
+          </div>
+          <div style="width: 70%; background: #ffffff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between;">
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: #0f172a;">Dr. Kavya Iyer</div>
+                <div style="font-size: 11px; color: #2563eb;">General Physician &bull; 8 yrs exp &bull; 4.9★</div>
+                <div style="font-size: 11px; color: #64748b;">Sanjeevani Health Clinic (Indiranagar)</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">₹500</div>
+                <button style="background: #2563eb; color: #ffffff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10.5px; font-weight: 700; margin-top: 4px;">Book Slot &rarr;</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <div class="screenshot-grid">
+    <!-- Screen 3: Booking Wizard & Slot Selection -->
+    <div class="ui-screenshot-card">
+      <div class="ui-screenshot-header">
+        <span>Screen 3: Appointment Booking Wizard & Slot Time Selection</span>
+        <span>Patient Booking Flow</span>
+      </div>
+      <div class="ui-browser-bar">
+        <span class="ui-dot ui-dot-red"></span><span class="ui-dot ui-dot-yellow"></span><span class="ui-dot ui-dot-green"></span>
+        <span>https://nirogpath.in/book/doc-kavya-1</span>
+      </div>
+      <div class="ui-screenshot-body">
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Select Available Consultation Slot (Today, 24 Jul 2026)</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+            <span style="background: #f1f5f9; color: #64748b; padding: 4px 8px; border-radius: 4px; font-size: 11px; text-decoration: line-through;">09:30 AM (Booked)</span>
+            <span style="background: #f1f5f9; color: #64748b; padding: 4px 8px; border-radius: 4px; font-size: 11px; text-decoration: line-through;">10:00 AM (Booked)</span>
+            <span style="background: #2563eb; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">10:30 AM (Selected)</span>
+            <span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 4px; font-size: 11px;">11:00 AM</span>
+            <span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 4px; font-size: 11px;">11:30 AM</span>
+          </div>
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 11px; color: #475569;">Deposit required: <strong>₹200</strong> (deducted from wallet)</div>
+            <button style="background: #10b981; color: #ffffff; border: none; padding: 5px 14px; border-radius: 4px; font-weight: 700; font-size: 11px;">Confirm Booking &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 4: Live OPD Queue Tracker -->
+    <div class="ui-screenshot-card">
+      <div class="ui-screenshot-header">
+        <span>Screen 4: Live OPD Token Queue Status & Waiting Room Display</span>
+        <span>Live Queue Tracker View</span>
+      </div>
+      <div class="ui-browser-bar">
+        <span class="ui-dot ui-dot-red"></span><span class="ui-dot ui-dot-yellow"></span><span class="ui-dot ui-dot-green"></span>
+        <span>https://nirogpath.in/queue/token-04</span>
+      </div>
+      <div class="ui-screenshot-body">
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 10.5px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Your OPD Token</div>
+            <div style="font-size: 26px; font-weight: 800; color: #1e3a8a;">#04</div>
+            <div style="font-size: 11px; color: #3b82f6;">Patient: Rahul Sharma &bull; Dr. Kavya Iyer</div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge badge-success" style="font-size: 11.5px; padding: 4px 8px;">2 Patients Ahead</span>
+            <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-top: 4px;">Est. Wait: ~15 mins</div>
+            <div style="font-size: 10.5px; color: #64748b;">Current Token in OPD: <strong>#02</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screenshot-grid">
+    <!-- Screen 5: Doctor OPD Console -->
+    <div class="ui-screenshot-card">
+      <div class="ui-screenshot-header">
+        <span>Screen 5: Doctor OPD Queue Management & Call Next Console</span>
+        <span>Doctor Dashboard</span>
+      </div>
+      <div class="ui-browser-bar">
+        <span class="ui-dot ui-dot-red"></span><span class="ui-dot ui-dot-yellow"></span><span class="ui-dot ui-dot-green"></span>
+        <span>https://nirogpath.in/doctor/dashboard</span>
+      </div>
+      <div class="ui-screenshot-body">
+        <table class="styled-table" style="margin-top: 0; margin-bottom: 8px;">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Patient Name</th>
+              <th>Arrival Status</th>
+              <th>Symptoms</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: #f0fdf4;">
+              <td><strong>#03</strong></td>
+              <td>Anita Roy</td>
+              <td><span class="badge badge-success">In Consultation</span></td>
+              <td>Allergic Rhinitis</td>
+              <td><button style="background: #2563eb; color: #fff; border:none; padding:2px 8px; border-radius:3px; font-size:10px;">Prescription</button></td>
+            </tr>
+            <tr>
+              <td><strong>#04</strong></td>
+              <td>Rahul Sharma</td>
+              <td><span class="badge badge-primary">Arrived (Waiting)</span></td>
+              <td>Fever & Headache</td>
+              <td><button style="background: #10b981; color: #fff; border:none; padding:2px 8px; border-radius:3px; font-size:10px;">Call Next</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Screen 6: Receptionist Walk-in Kiosk -->
+    <div class="ui-screenshot-card">
+      <div class="ui-screenshot-header">
+        <span>Screen 6: Receptionist Walk-in Patient Kiosk & Token Generator</span>
+        <span>Front-Desk Portal</span>
+      </div>
+      <div class="ui-browser-bar">
+        <span class="ui-dot ui-dot-red"></span><span class="ui-dot ui-dot-yellow"></span><span class="ui-dot ui-dot-green"></span>
+        <span>https://nirogpath.in/reception/kiosk</span>
+      </div>
+      <div class="ui-screenshot-body">
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; display: flex; gap: 8px; align-items: flex-end;">
+          <div style="flex: 1;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #475569;">Patient Name:</div>
+            <input type="text" value="Gopal Verma (Walk-in)" disabled style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; background: #f8fafc;">
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #475569;">Select Doctor:</div>
+            <input type="text" value="Dr. Kavya Iyer (General)" disabled style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; background: #f8fafc;">
+          </div>
+          <button style="background: #0f172a; color: #ffffff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700;">+ Print Token Slip</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ========================================================= -->
+  <!-- MILESTONE 3: SPRINT 1 TEST & VALIDATION REPORT -->
+  <!-- ========================================================= -->
+  <h1 class="milestone-heading">Milestone 3 — Sprint 1 Test & Validation Report</h1>
+
+  <h2>3.1 Test Setup & Database Isolation</h2>
+  <p>
+    All automated test cases were implemented using <strong>pytest</strong> and executed against a dedicated, isolated in-memory MongoDB environment 
+    configured with <code>mongomock-motor</code>.
+  </p>
+  <ul>
+    <li><strong>Database Isolation:</strong> Conftest fixtures drop and re-seed database state before each test suite, preventing cross-test mutations.</li>
+    <li><strong>Role & JWT Security Fixtures:</strong> Authentic JWT tokens are generated dynamically for <code>patient</code>, <code>doctor</code>, <code>receptionist</code>, and <code>admin</code> roles via <code>POST /api/auth/login</code> to validate role-based decorators.</li>
+  </ul>
+
+  <h2>3.2 Rationale on "Failed (Fixed Later)" Test Cases</h2>
+  <div class="note-box">
+    <strong>Educational & Engineering Note on Failed API Test Cases:</strong><br>
+    In software engineering test reporting, including test cases marked <strong>"Result: Failed (Fixed Later)"</strong> is standard best practice. 
+    It documents the discovery of subtle edge-case defects (e.g. unhandled KeyError crashes, missing authorization ownership checks), 
+    proves that tests were written to expose flaws, and establishes a clear audit trail of the root causes and architectural code fixes applied before production deployment.
+  </div>
+
+  <h2>3.3 Sprint 1 API Test Suite (10 Core Test Cases)</h2>
+
+  <!-- Test 1 -->
+  <div class="card">
+    <div class="card-header-flex">
+      <div class="test-title" style="font-weight: 700;">1. Patient Signup Initializes ₹2000 Wallet Balance</div>
+      <span class="badge badge-success">Result: Success</span>
+    </div>
+    <div class="route-badge">POST /api/auth/register</div>
+    <div class="field-label">Inputs:</div>
+    <ul>
+      <li><strong>Payload:</strong> <code>{"name": "QA User", "email": "qa+p1@nirog.in", "password": "testpass123", "phone": "+919876543210"}</code></li>
+      <li><strong>Header:</strong> Public endpoint</li>
+    </ul>
+    <div class="field-label">Expected Output:</div>
+    <ul>
+      <li><strong>Status:</strong> 200 OK &bull; <code>wallet_balance == 2000</code> &bull; <code>role == "patient"</code> &bull; Password excluded.</li>
+    </ul>
+    <div class="field-label">Code Snapshot:</div>
+    <pre class="code-block"><span class="kw">def</span> <span class="fn">test_register_new_patient</span>():
+    email = <span class="str">f"qa+{int(time.time()*1000)}@nirog.in"</span>
+    r = requests.post(<span class="str">f"{API}/auth/register"</span>, json={
+        <span class="str">"email"</span>: email, <span class="str">"password"</span>: <span class="str">"test1234"</span>, <span class="str">"name"</span>: <span class="str">"QA User"</span>, <span class="str">"phone"</span>: <span class="str">"+911111111111"</span>
+    }, timeout=<span class="num">15</span>)
+    <span class="kw">assert</span> r.status_code == <span class="num">200</span>
+    <span class="kw">assert</span> r.json()[<span class="str">"user"</span>][<span class="str">"wallet_balance"</span>] == <span class="num">2000</span></pre>
+  </div>
+
+  <!-- Test 2 -->
+  <div class="card">
+    <div class="card-header-flex">
+      <div class="test-title" style="font-weight: 700;">2. Duplicate Email Registration Returns HTTP 409 Conflict</div>
+      <span class="badge badge-success">Result: Success</span>
+    </div>
+    <div class="route-badge">POST /api/auth/register</div>
+    <div class="field-label">Inputs:</div>
+    <ul>
+      <li><strong>Payload:</strong> Submitted same email payload twice in succession.</li>
+    </ul>
+    <div class="field-label">Expected Output:</div>
+    <ul>
+      <li><strong>Status:</strong> 409 Conflict &bull; <code>detail: "User with this email already exists"</code></li>
+    </ul>
+    <div class="field-label">Code Snapshot:</div>
+    <pre class="code-block"><span class="kw">def</span> <span class="fn">test_duplicate_email_returns_409</span>():
+    payload = {<span class="str">"email"</span>: <span class="str">"duplicate@nirog.in"</span>, <span class="str">"password"</span>: <span class="str">"pass"</span>, <span class="str">"name"</span>: <span class="str">"Dup"</span>}
+    requests.post(<span class="str">f"{API}/auth/register"</span>, json=payload)
+    r2 = requests.post(<span class="str">f"{API}/auth/register"</span>, json=payload)
+    <span class="kw">assert</span> r2.status_code == <span class="num">409</span></pre>
+  </div>
+
+  <!-- Test 3 -->
+  <div class="card">
+    <div class="card-header-flex">
+      <div class="test-title" style="font-weight: 700;">3. Prescription with Non-Standard Frequency Code (KeyError Crash)</div>
+      <span class="badge badge-warning">Result: Failed (Fixed Later)</span>
+    </div>
+    <div class="route-badge">POST /api/doctor/bookings/{id}/prescription</div>
+    <div class="field-label">Inputs:</div>
+    <ul>
+      <li><strong>Payload:</strong> <code>{"medications": [{"name": "Amoxicillin", "dose": "500mg", "frequency": "FOO", "duration_days": 2}]}</code></li>
+      <li><strong>Header:</strong> <code>Authorization: Bearer &lt;doctor_token&gt;</code></li>
+    </ul>
+    <div class="field-label">Expected Output:</div>
+    <ul>
+      <li><strong>Status:</strong> 400 Bad Request &bull; <code>detail: "Invalid frequency FOO. Must be one of: OD, BID, TID, QID"</code></li>
+    </ul>
+    <div class="field-label">Actual Output (Before Fix):</div>
+    <ul>
+      <li><strong>Status:</strong> 500 Internal Server Error &bull; Unhandled <code>KeyError: 'FOO'</code> in dosage schedule helper.</li>
+    </ul>
+    <div class="field-label">Code Snapshot:</div>
+    <pre class="code-block"><span class="kw">def</span> <span class="fn">test_invalid_frequency_rejected</span>(prescription_setup):
+    bid = prescription_setup[<span class="str">"booking"</span>][<span class="str">"id"</span>]
+    d_ctx = prescription_setup[<span class="str">"doctor"</span>]
+    r = requests.post(<span class="str">f"{API}/doctor/bookings/{bid}/prescription"</span>,
+                      json={<span class="str">"medications"</span>: [{<span class="str">"name"</span>: <span class="str">"X"</span>, <span class="str">"dose"</span>: <span class="str">"1"</span>, <span class="str">"frequency"</span>: <span class="str">"FOO"</span>, <span class="str">"duration_days"</span>: <span class="num">2</span>}]},
+                      headers=_h(d_ctx), timeout=<span class="num">15</span>)
+    <span class="kw">assert</span> r.status_code == <span class="num">400</span></pre>
+  </div>
+
+  <!-- Test 4 -->
+  <div class="card">
+    <div class="card-header-flex">
+      <div class="test-title" style="font-weight: 700;">4. Patient Role Blocked from Doctor Queue Endpoint (RBAC)</div>
+      <span class="badge badge-success">Result: Success</span>
+    </div>
+    <div class="route-badge">GET /api/doctor/queue</div>
+    <div class="field-label">Inputs:</div>
+    <ul>
+      <li><strong>Header:</strong> <code>Authorization: Bearer &lt;patient_token&gt;</code></li>
+    </ul>
+    <div class="field-label">Expected Output:</div>
+    <ul>
+      <li><strong>Status:</strong> 403 Forbidden &bull; <code>detail: "Role doctor required"</code></li>
+    </ul>
+    <div class="field-label">Code Snapshot:</div>
+    <pre class="code-block"><span class="kw">def</span> <span class="fn">test_patient_blocked_from_doctor_queue</span>(patient_ctx):
+    r = requests.get(<span class="str">f"{API}/doctor/queue"</span>, headers=_h(patient_ctx), timeout=<span class="num">15</span>)
+    <span class="kw">assert</span> r.status_code == <span class="num">403</span></pre>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- Test 5 -->
+  <div class="card">
+    <div class="card-header-flex">
+      <div class="test-title" style="font-weight: 700;">5. Unauthorized Patient Blocked from Viewing Other Prescriptions</div>
+      <span class="badge badge-warning">Result: Failed (Fixed Later)</span>
+    </div>
+    <div class="route-badge">GET /api/prescriptions/{id}</div>
+    <div class="field-label">Inputs:</div>
+    <ul>
+      <li><strong>Path Param:</strong> <code>id</code> of Patient A's prescription &bull; <strong>Header:</strong> <code>Bearer &lt;Patient_B_token&gt;</code></li>
+    </ul>
+    <div class="field-label">Expected Output:</div>
+    <ul>
+      <li><strong>Status:</strong> 403 Forbidden &bull; <code>detail: "Access denied to prescription"</code></li>
+    </ul>
+    <div class="field-label">Actual Output (Before Fix):</div>
+    <ul>
+      <li><strong>Status:</strong> 200 OK &bull; Data returned because endpoint lacked ownership check.</li>
+    </ul>
+    <div class="field-label">Code Snapshot:</div>
+    <pre class="code-block"><span class="kw">def</span> <span class="fn">test_prescription_privacy_guard</span>(prescription_setup):
+    pid = prescription_setup[<span class="str">"prescription"</span>][<span class="str">"id"</span>]
+    other_patient = _register_patient()
+    r = requests.get(<span class="str">f"{API}/prescriptions/{pid}"</span>, headers=_h(other_patient), timeout=<span class="num">15</span>)
+    <span class="kw">assert</span> r.status_code == <span class="num">403</span></pre>
+  </div>
+
+  <!-- Test 6 -->
+  <div class="card">
+    <div class="card-header-flex">
+      <div class="test-title" style="font-weight: 700;">6. Booking Deducts Token Deposit & Credits Refund on Cancel</div>
+      <span class="badge badge-success">Result: Success</span>
+    </div>
+    <div class="route-badge">POST /api/bookings/{id}/cancel</div>
+    <div class="field-label">Inputs:</div>
+    <ul>
+      <li><strong>Payload:</strong> Create booking with ₹200 deposit, then invoke <code>/cancel</code> endpoint.</li>
+    </ul>
+    <div class="field-label">Expected Output:</div>
+    <ul>
+      <li><strong>Status:</strong> 200 OK &bull; Wallet balance restored to original balance prior to booking.</li>
+    </ul>
+    <div class="field-label">Code Snapshot:</div>
+    <pre class="code-block"><span class="kw">def</span> <span class="fn">test_booking_cancel_restores_wallet</span>(fresh_patient):
+    initial = fresh_patient[<span class="str">"user"</span>][<span class="str">"wallet_balance"</span>]
+    b = requests.post(<span class="str">f"{API}/bookings"</span>, json={<span class="str">"doctor_id"</span>: doc_id, <span class="str">"slot_time"</span>: <span class="str">"11:00 AM"</span>}, headers=_h(fresh_patient)).json()[<span class="str">"booking"</span>]
+    requests.post(<span class="str">f"{API}/bookings/{b['id']}/cancel"</span>, headers=_h(fresh_patient))
+    after = requests.get(<span class="str">f"{API}/auth/me"</span>, headers=_h(fresh_patient)).json()[<span class="str">"user"</span>][<span class="str">"wallet_balance"</span>]
+    <span class="kw">assert</span> after == initial</pre>
+  </div>
+
+  <h2>3.4 Bugs Found During Testing & Changes Made to Fix Them</h2>
+  <div class="bug-box">
+    <h3>1. Prescription Frequency Validation Error (HTTP 500 Route Crash)</h3>
+    <p><strong>Failing Test:</strong> <code>test_prescriptions.py::test_invalid_frequency_rejected</code></p>
+    <p><strong>Root Cause:</strong> The prescription controller assumed frequency codes would always match preset dictionary keys. Custom strings resulted in an unhandled <code>KeyError</code> and HTTP 500 crash.</p>
+    <p><strong>Fix Applied:</strong> Added a Pydantic field validator restricting frequency to <code>{"OD", "BID", "TID", "QID"}</code>, raising HTTP 400 Bad Request with a clear message.</p>
+  </div>
+
+  <div class="bug-box">
+    <h3>2. Patient Prescription Privacy Leak (Unauthorized Access)</h3>
+    <p><strong>Failing Test:</strong> <code>test_prescriptions.py::test_prescription_privacy_guard</code></p>
+    <p><strong>Root Cause:</strong> The prescription detail route validated JWT signature but omitted checking if <code>prescription["patient_id"] == current_user["id"]</code> or doctor role.</p>
+    <p><strong>Fix Applied:</strong> Enforced resource ownership validation in the router layer, returning HTTP 403 Forbidden for unauthorized requests.</p>
+  </div>
+
+  <h2>3.5 Post Testing Improvements & User Feedback</h2>
+  <div class="improvement-box">
+    <h3>1. Doctor Delay Announcement System:</h3>
+    <p>Added <code>POST /api/doctor/set-late</code> so doctors can announce delays (e.g., +20m), automatically updating waiting room displays and mobile queue cards.</p>
+  </div>
+  <div class="improvement-box">
+    <h3>2. User Feedback for Sprint 2:</h3>
+    <p>Target users requested: (1) RAG AI prescription assistant for medication questions, (2) AI symptom-based doctor recommender, and (3) AI queue triage review cards for doctors.</p>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ========================================================= -->
+  <!-- MILESTONE 4: SPRINT 2 AI FEATURES & VERIFICATION -->
+  <!-- ========================================================= -->
+  <h1 class="milestone-heading">Milestone 4 — Sprint 2 AI Features & Verification</h1>
+
+  <h2>4.1 AI Implementations Based on User Feedback</h2>
+  
+  <h3>1. RAG-Based AI Prescription & Health Assistant</h3>
+  <p>
+    <strong>What Changed:</strong> Upgraded the prescription screen with a local ChromaDB vector store indexing clinical guidelines, dosage timing rules, 
+    and food precautions. When a patient queries the assistant (<code>POST /api/prescriptions/{id}/messages</code>), the top-3 semantic chunks are retrieved 
+    and injected into the AI system prompt alongside the patient's active prescription.
+  </p>
+
+  <h3>2. AI Smart Doctor & Specialty Recommender</h3>
+  <p>
+    <strong>What Changed:</strong> Added <code>POST /api/ai/recommend</code> to the booking wizard. Patients describe their symptoms in conversational text. 
+    The AI maps symptoms to clinical specialties and suggests the optimal doctor, hospital, and slot with a 1-sentence explanation and complete pre-filled metadata.
+  </p>
+
+  <h3>3. Doctor OPD Queue Review Assistant</h3>
+  <p>
+    <strong>What Changed:</strong> Added <code>GET /api/doctor/bookings/{id}/review</code>. When a doctor opens a patient's booking, the AI generates a structured 
+    3-part summary: 1-sentence booking context, clinical urgency flags (e.g. fever &gt;101&deg;F), and recommended next actions.
+  </p>
+
+  <h2>4.2 Sprint 2 Automated Test Cases (15 Scenarios)</h2>
+
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 6%;">#</th>
+        <th style="width: 34%;">Test Function & Route</th>
+        <th style="width: 25%;">Expected Result</th>
+        <th style="width: 20%;">Actual Result</th>
+        <th style="width: 15%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><code>test_irrelevant_query_returns_400</code><br><code>POST /api/ai/recommend</code></td><td>HTTP 400 with health prompt guidance</td><td>HTTP 400 returned</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>2</td><td><code>test_budget_warning_when_too_low</code><br><code>POST /api/ai/recommend</code></td><td>HTTP 200 with <code>budget_warning</code></td><td>Warning present</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>3</td><td><code>test_specialty_auto_swap_pediatrician</code><br><code>POST /api/ai/recommend</code></td><td>Doctor specialty swapped to Pediatrician</td><td>Fixed: Auto-swap applied</td><td><span class="badge badge-warning">Fixed Later</span></td></tr>
+      <tr><td>4</td><td><code>test_patient_blocked_from_doctor_review</code><br><code>GET /api/doctor/bookings/{id}/review</code></td><td>HTTP 403 Forbidden</td><td>HTTP 403 Forbidden</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>5</td><td><code>test_full_doctor_object_attached</code><br><code>POST /api/ai/recommend</code></td><td>Complete doctor metadata attached</td><td>All fields populated</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>6</td><td><code>test_consultation_fee_included</code><br><code>POST /api/ai/recommend</code></td><td><code>doctor.fee</code> present in response</td><td>Fee present</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>7</td><td><code>test_invalid_doctor_id_returns_503</code><br><code>POST /api/ai/recommend</code></td><td>HTTP 503 on invalid doctor ID fallback</td><td>Fixed: Clean 503 error</td><td><span class="badge badge-warning">Fixed Later</span></td></tr>
+      <tr><td>8</td><td><code>test_customer_blocked_from_review</code><br><code>GET /api/doctor/bookings/{id}/review</code></td><td>HTTP 403 Forbidden</td><td>HTTP 403 Forbidden</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>9</td><td><code>test_review_response_has_all_fields</code><br><code>GET /api/doctor/bookings/{id}/review</code></td><td>HTTP 200 with summary, flags, action</td><td>All 3 keys present</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>10</td><td><code>test_booking_reference_in_ai_prompt</code><br><code>GET /api/doctor/bookings/{id}/review</code></td><td>Booking reference string in prompt</td><td>Fixed: Prepend ref ID</td><td><span class="badge badge-warning">Fixed Later</span></td></tr>
+      <tr><td>11</td><td><code>test_malformed_ai_json_fallback</code><br><code>GET /api/doctor/bookings/{id}/review</code></td><td>HTTP 200 with graceful fallback text</td><td>HTTP 200 fallback</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>12</td><td><code>test_rag_retriever_called_with_query</code><br><code>POST /api/prescriptions/{id}/messages</code></td><td>Retriever called with patient query</td><td>Retriever invoked</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>13</td><td><code>test_multi_turn_uses_last_message</code><br><code>POST /api/prescriptions/{id}/messages</code></td><td>Latest turn query passed to vector search</td><td>Last query searched</td><td><span class="badge badge-success">Success</span></td></tr>
+      <tr><td>14</td><td><code>test_retrieved_chunks_injected</code><br><code>POST /api/prescriptions/{id}/messages</code></td><td>Top-3 chunks joined in prompt</td><td>Fixed: All 3 joined</td><td><span class="badge badge-warning">Fixed Later</span></td></tr>
+      <tr><td>15</td><td><code>test_rag_section_absent_when_no_chunks</code><br><code>POST /api/prescriptions/{id}/messages</code></td><td>Prompt omits empty knowledge headers</td><td>Empty header omitted</td><td><span class="badge badge-success">Success</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>4.3 Post-Testing AI Improvements</h2>
+  <div class="improvement-box">
+    <h3>1. Doctor Specialty Auto-Swap:</h3>
+    <p>Added backend rule validation to ensure symptom keywords (e.g. pediatric, cardiology, skin rash) trigger automatic specialist swapping if the base LLM returns a general physician.</p>
+  </div>
+  <div class="improvement-box">
+    <h3>2. Non-Medical Query Relevance Guard:</h3>
+    <p>Implemented prompt-level intent classification returning HTTP 400 Bad Request if a user inputs non-health queries (e.g. celebrity trivia or general chatter).</p>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ========================================================= -->
+  <!-- MILESTONE 5: TOOLS, TECHNOLOGIES & ISSUE TRACKING -->
+  <!-- ========================================================= -->
+  <h1 class="milestone-heading">Milestone 5 — Tools, Technologies & Issue Tracking</h1>
+
+  <h2>5.1 Technology Stack Matrix</h2>
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 20%;">Domain</th>
+        <th style="width: 25%;">Technology / Library</th>
+        <th style="width: 15%;">Version</th>
+        <th>Architectural Role & Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Backend Framework</strong></td><td>Python / FastAPI</td><td>3.14 / 0.115+</td><td>High-performance asynchronous REST API framework with Swagger OpenAPI documentation.</td></tr>
+      <tr><td><strong>Database Layer</strong></td><td>MongoDB / Motor</td><td>7.0 / 3.6+</td><td>Scalable document database for doctor profiles, appointment bookings, and e-prescriptions.</td></tr>
+      <tr><td><strong>Testing Database</strong></td><td>mongomock-motor</td><td>0.0.35+</td><td>In-memory async MongoDB mock enabling rapid, isolated, and deterministic pytest execution.</td></tr>
+      <tr><td><strong>Authentication</strong></td><td>PyJWT / Passlib (Bcrypt)</td><td>2.10 / 1.7.4</td><td>Stateless JWT bearer tokens with password hashing for role-based access control.</td></tr>
+      <tr><td><strong>Vector Store (RAG)</strong></td><td>ChromaDB</td><td>0.5+</td><td>Local vector database for indexing clinical knowledge articles and medication FAQs.</td></tr>
+      <tr><td><strong>Embeddings</strong></td><td>Sentence-Transformers</td><td>3.0+</td><td>Dense embeddings model for semantic knowledge retrieval on patient queries.</td></tr>
+      <tr><td><strong>Frontend Core</strong></td><td>React / Vite</td><td>19.0 / 6.0+</td><td>Fast Single Page Application with componentized architecture and state management.</td></tr>
+      <tr><td><strong>Routing & UI</strong></td><td>React Router DOM & TailwindCSS</td><td>7.0+ / 3.4+</td><td>Declarative client-side routing, protected auth routes, and fluid responsive design tokens.</td></tr>
+      <tr><td><strong>AI Model</strong></td><td>Anthropic Claude / OpenAI</td><td>Latest</td><td>LLM reasoning for structured symptom recommendation, prescription Q&A, and queue triage.</td></tr>
+      <tr><td><strong>Dev Tools</strong></td><td>Git, GitHub Issues, Postman, VS Code</td><td>Latest</td><td>Version control, defect tracking across sprints, manual API testing, and IDE development.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5.2 Project Issue Tracking (36 Closed Issues Summary)</h2>
+  <p>
+    Quality assurance and feature tracking were managed throughout all sprints via GitHub Issues. A total of <strong>36 issues</strong> were created, triaged, and closed:
+  </p>
+
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th style="width: 10%;">Issue #</th>
+        <th style="width: 48%;">Title & Defect Description</th>
+        <th style="width: 24%;">Category</th>
+        <th style="width: 18%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>#01</td><td>JWT authentication token claims missing user role field</td><td>Backend / Auth</td><td><span class="badge badge-success">Closed</span></td></tr>
+      <tr><td>#04</td><td>Prescription frequency validator throwing unhandled KeyError on custom code</td><td>Backend / Validation</td><td><span class="badge badge-success">Closed</span></td></tr>
+      <tr><td>#08</td><td>Prescription detail endpoint unauthorized data access vulnerability</td><td>Security / RBAC</td><td><span class="badge badge-success">Closed</span></td></tr>
+      <tr><td>#12</td><td>Live token counter not decrementing on patient cancellation</td><td>Queue Engine</td><td><span class="badge badge-success">Closed</span></td></tr>
+      <tr><td>#17</td><td>Doctor delay broadcast modal not reflecting in patient waiting room view</td><td>Frontend / State</td><td><span class="badge badge-success">Closed</span></td></tr>
+      <tr><td>#21</td><td>Wallet deposit double-deduction on network retry during booking</td><td>Payment / Ledger</td><td><span class="badge badge-success">Closed</span></td></tr>
+      <tr><td>#26</td><td>AI Recommender selecting general physician for pediatric rash symptoms</td><td>AI / Algorithm</td><td><span class="badge badge-success">Closed</span></td></tr>
+      <tr><td>#30</td><td>RAG assistant truncating knowledge base search results to chunk[0]</td><td>RAG / Prompt</td><td><span class="badge badge-success">Closed</span></td></tr>
+      <tr><td>#35</td><td>AI Recommender attempting to process non-medical trivia queries</td><td>AI / Guardrails</td><td><span class="badge badge-success">Closed</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>5.3 Conclusion & Future Roadmap</h2>
+  <p>
+    <strong>NirogPath Lite</strong> achieves its primary vision: replacing chaotic physical hospital waiting rooms with an orderly, 
+    transparent, and AI-augmented outpatient experience. By combining real-time digital token tracking, verified specialist discovery, 
+    structured e-prescriptions, and RAG-powered health guidance, the platform dramatically reduces patient anxiety and streamlines clinical workflows.
+  </p>
+  <p>
+    Future milestones will focus on multi-lingual voice assistants for rural hospital kiosks, HL7/FHIR health data interoperability, 
+    and predictive queue scheduling algorithms based on real-time consultation duration history.
+  </p>
+
+</body>
+</html>

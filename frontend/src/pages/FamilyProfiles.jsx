@@ -47,7 +47,7 @@ export default function FamilyProfiles() {
   const openAdd = () => {
     setForm({ name: "", relationship: "spouse", gender: "male", dob: "", phone: "" });
     setError("");
-    setModal({});
+    setModal("add");
   };
 
   const openEdit = (m) => {
@@ -63,7 +63,7 @@ export default function FamilyProfiles() {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!form.name.trim()) {
       setError("Name is required");
       return;
@@ -71,7 +71,7 @@ export default function FamilyProfiles() {
     setSaving(true);
     setError("");
     try {
-      const isEdit = modal && modal.id;
+      const isEdit = modal && typeof modal === "object" && modal.id;
       const url = isEdit ? `/api/family/${modal.id}` : "/api/family";
       const method = isEdit ? "PATCH" : "POST";
       const res = await fetchApi(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
@@ -207,7 +207,7 @@ export default function FamilyProfiles() {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-display text-xl text-charcoal">
-                {modal === "add" ? "Add family member" : `Edit ${modal.name}`}
+                {modal === "add" ? "Add family member" : `Edit ${modal?.name || ""}`}
               </h2>
               <button
                 onClick={() => setModal(null)}
@@ -304,7 +304,7 @@ export default function FamilyProfiles() {
                 Cancel
               </button>
               <button
-                onClick={saveForm}
+                onClick={handleSave}
                 disabled={saving}
                 data-testid="family-save-btn"
                 className="flex-1 py-2.5 rounded-full bg-saffron text-white font-body text-sm hover:bg-saffron-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
