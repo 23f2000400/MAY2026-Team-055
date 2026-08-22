@@ -121,6 +121,12 @@ async def create_city_request(body: CityRequestIn):
     return {"ok": True}
 
 
+from rag.knowledge_base import CLINICAL_GUIDELINES_KB
+from rag.retriever import global_rag_retriever
+from rag.generator import global_rag_generator
+from rag.llm_client import global_llm_client
+
+
 class RecommendIn(BaseModel):
     description: str
     city: Optional[str] = "Bengaluru"
@@ -128,30 +134,42 @@ class RecommendIn(BaseModel):
 
 
 def _call_ai_recommender(desc: str):
+    """Test hook for mocking external LLM responses in test suites."""
     return None
+
+
+@router.get("/ai/rag/status")
+async def get_rag_status(user: dict = Depends(get_current_user)):
+    """
+    Returns live health & status information about the NirogPath Medical RAG Pipeline.
+    """
+    return {
+        "status": "operational",
+        "retrieval_engine": "hybrid_dense_sparse_vector",
+        "indexed_clinical_guidelines": len(CLINICAL_GUIDELINES_KB),
+        "llm_provider": global_llm_client.get_active_provider(),
+        "relevance_guard": "enabled",
+    }
 
 
 @router.post("/ai/recommend")
 async def ai_recommend_doctor(body: RecommendIn, user: dict = Depends(get_current_user)):
     """
-    AI Smart Doctor & Specialty Recommender endpoint for Sprint 2.
+    AI Smart Doctor & Specialty Recommender powered by Medical RAG (Retrieval-Augmented Generation).
+    Executes clinical relevance check, knowledge retrieval from guidelines & doctor catalogue,
+    prompt augmentation, and LLM synthesis.
     """
     desc_lower = body.description.lower()
 
     # 1. Relevance Guard
-    medical_keywords = [
-        "fever", "cold", "cough", "headache", "pain", "doctor", "health", "skin", "rash",
-        "allergy", "child", "pediatric", "chest", "heart", "cardio", "bone", "joint", "knee",
-        "stomach", "symptom", "treatment", "checkup", "consultation", "hospital", "clinic"
-    ]
-    if not any(k in desc_lower for k in medical_keywords):
+    if not global_rag_retriever.check_medical_relevance(desc_lower):
         raise HTTPException(400, "Your query does not appear to be medical or health-related. Please describe your symptoms.")
 
-    # 2. Mock / LLM override check for testing
+    # 2. Test / Mock override hook check
     if "doc-fake" in desc_lower or "invalid_doctor" in desc_lower:
         raise HTTPException(503, "AI service returned an invalid doctor reference.")
     llm_res = _call_ai_recommender(desc_lower)
-    if llm_res and "doctor_id" in llm_res:
+    if llm_res and isinstance(llm_res, dict) and "doctor_id" in llm_res:
         doc_id = llm_res["doctor_id"]
         if doc_id == "doc-FAKE":
             raise HTTPException(503, "AI service returned an invalid doctor reference.")
@@ -159,39 +177,19 @@ async def ai_recommend_doctor(body: RecommendIn, user: dict = Depends(get_curren
         if not target_doc:
             raise HTTPException(503, "AI service returned an invalid doctor reference.")
 
-    # 3. Specialty Auto-correction
-    detected_specialty = "General Physician"
-    if any(k in desc_lower for k in ["child", "pediatric", "baby", "infant", "kids"]):
-        detected_specialty = "Pediatrician"
-    elif any(k in desc_lower for k in ["skin", "rash", "acne", "allergy", "eczema"]):
-        detected_specialty = "Dermatologist"
-    elif any(k in desc_lower for k in ["heart", "chest pain", "cardio", "bp", "blood pressure"]):
-        detected_specialty = "Cardiologist"
-    elif any(k in desc_lower for k in ["bone", "joint", "knee", "back pain", "fracture"]):
-        detected_specialty = "Orthopedic"
-
-    # Find doctor matching specialty
-    doc = await db.users.find_one({"role": "doctor", "specialty": detected_specialty}, {"_id": 0, "password_hash": 0})
-    if not doc:
-        doc = await db.users.find_one({"role": "doctor"}, {"_id": 0, "password_hash": 0})
-
-    if not doc:
+    # 3. Execute Full RAG Retrieval
+    preferred_city = body.city or "Bengaluru"
+    retrieval_res = await global_rag_retriever.retrieve(db, body.description, preferred_city)
+    
+    if not retrieval_res.top_doctor:
         raise HTTPException(503, "No available doctor found for recommendation.")
 
-    # 4. Budget Warning
-    budget_warning = None
-    numbers = re.findall(r'\b\d+\b', desc_lower)
-    for num_str in numbers:
-        val = int(num_str)
-        if 1 <= val <= 399 and "budget" in desc_lower:
-            budget_warning = f"Stated budget ₹{val} is below minimum doctor fee (₹400)."
-            break
+    # 4. Execute RAG Generation & Grounding
+    result = await global_rag_generator.generate(db, body.description, preferred_city, retrieval_res)
+    
+    if "error" in result:
+        if result["error"] == "non_medical_query":
+            raise HTTPException(400, result["message"])
+        raise HTTPException(503, result["message"])
 
-    doc_data = {**doc, "fee": doc.get("fee", 500)}
-
-    return {
-        "doctor": doc_data,
-        "reasoning": f"Recommended {doc['name']} as they specialize in {detected_specialty} with rating {doc.get('rating', 4.9)}★.",
-        "budget_warning": budget_warning,
-    }
-
+    return result

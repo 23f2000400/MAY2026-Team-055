@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, Loader2, AlertTriangle, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2, AlertTriangle, AlertCircle, CheckCircle2, BookOpen, ShieldCheck, Activity } from "lucide-react";
 import api, { formatApiError } from "@/lib/api";
 
 export default function AiDoctorRecommender({ onSelectRecommendation }) {
@@ -33,16 +33,22 @@ export default function AiDoctorRecommender({ onSelectRecommendation }) {
     <div className="mb-8 rounded-3xl bg-gradient-to-br from-charcoal to-charcoal-dark p-6 sm:p-8 text-bone shadow-2xl border border-white/10 relative overflow-hidden" data-testid="ai-doctor-recommender">
       <div className="absolute -top-12 -right-12 w-48 h-48 bg-saffron/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="flex items-center gap-2 text-saffron text-xs font-mono font-semibold uppercase tracking-[0.25em] mb-2">
-        <Sparkles className="w-4 h-4 animate-pulse" />
-        <span>NirogPath AI Smart Recommender</span>
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <div className="flex items-center gap-2 text-saffron text-xs font-mono font-semibold uppercase tracking-[0.25em]">
+          <Sparkles className="w-4 h-4 animate-pulse" />
+          <span>NirogPath Medical RAG AI Recommender</span>
+        </div>
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono">
+          <ShieldCheck className="w-3 h-3" />
+          <span>RAG Pipeline Active</span>
+        </div>
       </div>
 
       <h3 className="text-xl font-heading font-bold text-white mb-2">
-        Let AI find the right specialist for you
+        Let Clinical RAG AI find the right specialist for you
       </h3>
       <p className="text-sm text-bone/70 mb-6 max-w-xl">
-        Describe your symptoms and budget, and NirogPath AI will recommend the optimal doctor and consultation slot.
+        Describe your symptoms and budget. Our Retrieval-Augmented Generation (RAG) engine retrieves verified clinical guidelines and live doctor profiles to formulate an evidence-based recommendation.
       </p>
 
       <form onSubmit={handleRecommend} className="space-y-4">
@@ -67,7 +73,7 @@ export default function AiDoctorRecommender({ onSelectRecommendation }) {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Analyzing Symptoms...</span>
+                <span>Retrieving Clinical Evidence & Scoring Doctors...</span>
               </>
             ) : (
               <>
@@ -84,7 +90,7 @@ export default function AiDoctorRecommender({ onSelectRecommendation }) {
         <div className="mt-6 p-4 rounded-xl bg-crimson/10 border border-crimson/30 text-crimson-soft text-sm flex items-start gap-3" data-testid="ai-recommend-error">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
-            <strong className="font-semibold block mb-0.5">Validation Error</strong>
+            <strong className="font-semibold block mb-0.5">Clinical Validation Check</strong>
             <span>{error}</span>
           </div>
         </div>
@@ -103,21 +109,65 @@ export default function AiDoctorRecommender({ onSelectRecommendation }) {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
             <div>
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-saffron block mb-1">
-                ✦ Recommended Specialist
-              </span>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-saffron block">
+                  ✦ Recommended Specialist
+                </span>
+                {result.urgency_level && (
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-mono uppercase font-bold ${
+                    result.urgency_level === "emergency" || result.urgency_level === "urgent"
+                      ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                      : result.urgency_level === "priority"
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                  }`}>
+                    {result.urgency_level} triage
+                  </span>
+                )}
+              </div>
               <h4 className="text-lg font-heading font-bold text-white">
                 {result.doctor.name} — <span className="text-saffron-light">{result.doctor.specialty}</span>
               </h4>
               <p className="text-xs text-bone/70 mt-1">
                 {result.doctor.hospital || "Sanjeevani Health Hub"} • Fee: ₹{result.doctor.fee || 500}
+                {result.doctor.rating && ` • Rating: ${result.doctor.rating}★`}
               </p>
             </div>
           </div>
 
-          <p className="text-xs text-bone/90 bg-black/20 p-3 rounded-xl border border-white/5 italic">
-            "{result.reasoning}"
-          </p>
+          <div>
+            <div className="text-[11px] font-mono text-bone/60 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-saffron" />
+              <span>Clinical Evidence & RAG Synthesis:</span>
+            </div>
+            <p className="text-xs text-bone/90 bg-black/20 p-3 rounded-xl border border-white/5 italic">
+              "{result.reasoning}"
+            </p>
+          </div>
+
+          {result.clinical_notes && (
+            <div className="text-xs text-bone/70 bg-white/5 p-3 rounded-xl border border-white/5">
+              <span className="font-semibold text-bone/90">Clinical Note: </span>
+              {result.clinical_notes}
+            </div>
+          )}
+
+          {/* Retrieved Sources / Citations */}
+          {result.rag_sources && result.rag_sources.length > 0 && (
+            <div className="pt-1">
+              <div className="flex items-center gap-1.5 text-[11px] font-mono text-bone/50 mb-1.5">
+                <BookOpen className="w-3 h-3 text-saffron/70" />
+                <span>Retrieved Knowledge Evidence ({result.rag_sources.length} sources indexed):</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {result.rag_sources.map((src, i) => (
+                  <span key={i} className="text-[10px] font-mono bg-white/5 px-2 py-0.5 rounded border border-white/10 text-bone/70">
+                    {src.type === "clinical_guideline" ? `📋 ${src.title}` : `👨‍⚕️ ${src.name} (${src.specialty})`}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="pt-2">
             <button
