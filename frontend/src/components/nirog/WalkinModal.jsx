@@ -4,17 +4,22 @@ import { useState, useEffect } from "react";
 import { X, Zap, Clock, Loader2 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 
-export default function WalkinModal({ onClose, onAdded }) {
+export default function WalkinModal({ onClose, onAdded, doctorsList }) {
   const [form, setForm] = useState({ patient_name: "", phone: "", doctor_id: "", urgency: "routine" });
-  const [doctors, setDoctors] = useState([]);
+  const [doctors, setDoctors] = useState(doctorsList || []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchApi('/api/doctors')
-      .then(r => r.ok ? r.json() : { doctors: [] })
-      .then(d => setDoctors(d.doctors || []));
-  }, []);
+    if (doctorsList && doctorsList.length > 0) {
+      setDoctors(doctorsList);
+    } else {
+      fetchApi('/api/reception/doctors')
+        .then(r => r.ok ? r.json() : fetchApi('/api/doctors').then(res => res.json()))
+        .then(d => setDoctors(d.doctors || []))
+        .catch(() => setDoctors([]));
+    }
+  }, [doctorsList]);
 
   const submit = async () => {
     if (!form.patient_name.trim()) { setError("Patient name required"); return; }

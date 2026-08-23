@@ -63,8 +63,8 @@ class LLMClient:
         return None
 
     def _call_gemini(self, system_prompt: str, user_prompt: str) -> Optional[str]:
-        configured_model = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash").replace("models/", "")
-        candidate_models = [configured_model, "gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest", "gemini-2.5-flash"]
+        configured_model = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash").replace("models/", "")
+        candidate_models = [configured_model, "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest"]
         # Remove duplicates while preserving order
         seen = set()
         models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
@@ -92,11 +92,13 @@ class LLMClient:
                 if resp.status_code == 200:
                     data = resp.json()
                     text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    logger.info(f"RAG: Generated response using Gemini model: {model}")
                     return text.strip()
                 elif resp.status_code in (400, 401, 403):
                     logger.warning(f"Gemini API auth error {resp.status_code}: {resp.text[:200]}")
                     return None
-                elif resp.status_code == 404:
+                elif resp.status_code in (404, 429):
+                    logger.info(f"Gemini API ({model}) returned status {resp.status_code}, trying fallback candidate model...")
                     continue
                 else:
                     logger.warning(f"Gemini API ({model}) returned error {resp.status_code}: {resp.text[:200]}")

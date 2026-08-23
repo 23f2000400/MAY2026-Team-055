@@ -1,7 +1,7 @@
 """Hybrid Vector & Semantic Knowledge Base Retriever for NirogPath RAG.
 
 Combines:
-- Clinical Relevance Guard
+- Clinical Relevance Guard with Compound Term Normalization
 - Dense TF-IDF & Subword Cosine Semantic Vector Space Indexing
 - Clinical Guideline Top-K Retrieval
 - Real-time MongoDB Doctor Candidate Retrieval & Scoring
@@ -19,21 +19,89 @@ from .knowledge_base import CLINICAL_GUIDELINES_KB, ClinicalDocument, format_doc
 logger = logging.getLogger("nirogpath.rag.retriever")
 
 
-# Medical clinical vocabulary for the relevance guard
+def normalize_clinical_text(text: str) -> str:
+    """Normalizes common fused medical words and spelling variants."""
+    cleaned = text.lower()
+    replacements = {
+        r'\bbloodpressure\b': 'blood pressure',
+        r'\bhighbp\b': 'high blood pressure',
+        r'\blowbp\b': 'low blood pressure',
+        r'\bhigh-bp\b': 'high blood pressure',
+        r'\blow-bp\b': 'low blood pressure',
+        r'\bbloodsugar\b': 'blood sugar',
+        r'\bhighsugar\b': 'high blood sugar',
+        r'\blowsugar\b': 'low blood sugar',
+        r'\bhigh-sugar\b': 'high blood sugar',
+        r'\bsorethroat\b': 'sore throat',
+        r'\bchestpain\b': 'chest pain',
+        r'\bbackpain\b': 'back pain',
+        r'\bkneepain\b': 'knee pain',
+        r'\bneckpain\b': 'neck pain',
+        r'\bjointpain\b': 'joint pain',
+        r'\bstomachache\b': 'stomach ache',
+        r'\bbodyache\b': 'body ache',
+        r'\bheadache\b': 'headache',
+        r'\bheartattack\b': 'heart attack',
+        r'\bheartburn\b': 'heartburn',
+        r'\blosemotion\b': 'loose motions',
+        r'\bloosemotion\b': 'loose motions',
+        r'\bloosemotions\b': 'loose motions',
+    }
+    for pat, rep in replacements.items():
+        cleaned = re.sub(pat, rep, cleaned)
+    return cleaned
+
+
+# Comprehensive medical clinical vocabulary for the relevance guard
 MEDICAL_VOCABULARY = {
+    # Cardiovascular & Blood Pressure
+    "blood", "pressure", "bloodpressure", "bp", "hypertension", "hypertensive", "hypotension",
+    "cardiac", "cardio", "cardiovascular", "heart", "chest", "chestpain", "angina", "palpitation",
+    "palpitations", "pulse", "arrhythmia", "cholesterol",
+
     # Symptoms & Conditions
-    "fever", "cold", "cough", "headache", "pain", "doctor", "health", "skin", "rash",
-    "allergy", "child", "pediatric", "chest", "heart", "cardio", "bone", "joint", "knee",
-    "stomach", "symptom", "treatment", "checkup", "consultation", "hospital", "clinic",
-    "dizziness", "vertigo", "fatigue", "vomiting", "nausea", "diarrhea", "constipation",
-    "bp", "blood pressure", "hypertension", "diabetes", "sugar", "thyroid", "acne", "hair",
-    "ear", "nose", "throat", "ent", "tonsil", "sinus", "back", "spine", "orthopedic",
-    "fracture", "swelling", "infection", "medicine", "prescription", "appointment", "pulse",
-    "breath", "breathing", "asthma", "eczema", "itch", "itching", "weight",
-    "infant", "baby", "toddler", "kids", "urgent", "emergency", "burn", "wound", "injury",
-    "eyes", "eye", "vision", "teeth", "tooth", "dental", "dentist", "cancer", "tumor",
-    "kidney", "liver", "lungs", "sprain", "chills", "sore", "abdomen", "abdominal",
-    "migraine", "flu", "pregnant", "pregnancy", "gynecology", "psychiatry", "anxiety"
+    "fever", "feverish", "temperature", "chills", "cold", "cough", "coughing", "sneeze", "sneezing",
+    "headache", "bodyache", "pain", "aching", "sore", "hurt", "hurting", "stiff", "stiffness",
+    "dizziness", "dizzy", "vertigo", "fatigue", "tired", "tiredness", "weak", "weakness", "lethargy",
+    "vomiting", "vomit", "nausea", "nauseous", "diarrhea", "constipation", "motions", "acidity",
+    "gas", "bloating", "indigestion", "heartburn", "cramp", "cramps", "spasm",
+
+    # Dermatology & Allergy
+    "skin", "rash", "rashes", "acne", "pimple", "pimples", "allergy", "allergic", "eczema",
+    "psoriasis", "itch", "itching", "itchy", "dandruff", "alopecia", "hair", "hairfall",
+    "pigmentation", "mole", "boil", "ulcer", "blister", "burn", "wound", "bruise",
+
+    # Pediatrics & Family
+    "child", "children", "pediatric", "infant", "baby", "toddler", "kids", "newborn",
+    "vaccine", "vaccination", "growth", "colic",
+
+    # Orthopedic & Spine
+    "bone", "joint", "jointpain", "knee", "kneepain", "back", "backache", "backpain", "spine",
+    "lumbar", "cervical", "neck", "neckpain", "shoulder", "orthopedic", "fracture", "sprain",
+    "strain", "swelling", "swollen", "arthritis", "ligament",
+
+    # ENT, Eyes & Dental
+    "ear", "ears", "earache", "hearing", "tinnitus", "nose", "sinus", "sinusitis", "throat",
+    "sorethroat", "ent", "tonsil", "tonsillitis", "eye", "eyes", "vision", "blurry",
+    "teeth", "tooth", "toothache", "gum", "gums", "dental", "dentist",
+
+    # Respiratory & Pulmonary
+    "breath", "breathing", "breathless", "breathlessness", "dyspnea", "asthma", "asthmatic",
+    "wheezing", "lungs", "congestion", "phlegm", "mucus",
+
+    # Endocrinology & Internal Medicine
+    "diabetes", "diabetic", "sugar", "bloodsugar", "glucose", "insulin", "thyroid", "tsh",
+    "hormone", "weight", "obesity", "appetite",
+
+    # Abdominal & Renal
+    "stomach", "stomachache", "abdomen", "abdominal", "belly", "liver", "jaundice",
+    "kidney", "urine", "urinary", "uti", "stone",
+
+    # General Healthcare & Clinical Services
+    "doctor", "physician", "specialist", "surgeon", "consultation", "consult", "checkup",
+    "hospital", "clinic", "opd", "medicine", "medication", "prescription", "tablet", "pill",
+    "dose", "test", "scan", "xray", "ecg", "ultrasound", "infection", "infected", "urgent",
+    "emergency", "sick", "ill", "unwell", "disease", "disorder", "health"
 }
 
 # Synonyms and clinical mapping expansion
@@ -43,6 +111,12 @@ CLINICAL_SYNONYMS = {
     "kid": ["child", "pediatric"],
     "kids": ["child", "pediatric"],
     "children": ["child", "pediatric"],
+    "bloodpressure": ["blood pressure", "bp", "hypertension", "cardiology", "heart"],
+    "blood": ["blood pressure", "sugar", "circulation", "cardiology"],
+    "pressure": ["blood pressure", "hypertension", "bp", "cardiology", "heart"],
+    "hypertension": ["high blood pressure", "bloodpressure", "cardiology", "heart", "bp"],
+    "highbp": ["high blood pressure", "hypertension", "cardiology", "heart"],
+    "lowbp": ["low blood pressure", "hypotension", "cardiology"],
     "acne": ["skin", "dermatology", "rash", "pimples"],
     "rash": ["skin", "dermatology", "allergy", "eczema"],
     "eczema": ["skin", "dermatology", "allergy"],
@@ -51,7 +125,6 @@ CLINICAL_SYNONYMS = {
     "heart": ["cardio", "cardiology", "cardiovascular", "chest"],
     "cardiac": ["heart", "cardio", "cardiology"],
     "bp": ["blood pressure", "hypertension", "cardiology"],
-    "hypertension": ["blood pressure", "cardiology", "heart"],
     "joint": ["bone", "orthopedic", "knee", "arthritis"],
     "knee": ["joint", "bone", "orthopedic"],
     "backache": ["back pain", "spine", "orthopedic"],
@@ -95,7 +168,8 @@ class VectorSpaceIndex:
 
     @staticmethod
     def tokenize(text: str) -> List[str]:
-        cleaned = re.sub(r'[^a-zA-Z0-9\s]', ' ', text.lower())
+        cleaned = normalize_clinical_text(text)
+        cleaned = re.sub(r'[^a-zA-Z0-9\s]', ' ', cleaned.lower())
         tokens = [t for t in cleaned.split() if len(t) > 1]
         
         # Expand clinical synonyms
@@ -201,13 +275,20 @@ class RAGRetriever:
 
     def check_medical_relevance(self, query: str) -> bool:
         """Evaluates whether the patient query is clinically/medically relevant."""
-        q_lower = query.lower()
-        # Direct word boundary or substring match against medical terms
+        q_normalized = normalize_clinical_text(query)
+        q_lower = q_normalized.lower()
+
+        # 1. Direct vocabulary / token match
+        tokens = re.findall(r'[a-zA-Z]+', q_lower)
+        for t in tokens:
+            if t in MEDICAL_VOCABULARY:
+                return True
+
+        # 2. Multi-word phrase or substring match
         for term in MEDICAL_VOCABULARY:
-            if re.search(r'\b' + re.escape(term) + r'\b', q_lower):
+            if re.search(r'\b' + re.escape(term) + r'\b', q_lower) or term in q_lower:
                 return True
-            if term in q_lower:
-                return True
+
         return False
 
     def extract_budget_and_constraints(self, query: str) -> Tuple[Optional[int], Optional[str]]:
@@ -252,27 +333,32 @@ class RAGRetriever:
             )
 
         # 1. Retrieve Clinical Guidelines
-        guideline_results = self.guidelines_index.search(query, top_k=top_k_docs)
+        normalized_q = normalize_clinical_text(query)
+        guideline_results = self.guidelines_index.search(normalized_q, top_k=top_k_docs)
         retrieved_guidelines: List[ClinicalDocument] = [item[2] for item in guideline_results]
 
-        # If no specific guideline matched, default to General Medicine
+        # If guidelines matched, extract specialty & urgency
         if retrieved_guidelines:
             detected_specialty = retrieved_guidelines[0].specialty
             urgency_level = retrieved_guidelines[0].urgency_level
         else:
-            # Fallback guideline check
-            q_lower = query.lower()
-            if any(w in q_lower for w in ["child", "pediatric", "baby", "infant", "kids"]):
-                detected_specialty = "Pediatrician"
-            elif any(w in q_lower for w in ["skin", "rash", "acne", "allergy", "eczema"]):
-                detected_specialty = "Dermatologist"
-            elif any(w in q_lower for w in ["heart", "chest pain", "cardio", "bp", "blood pressure"]):
+            # Fallback clinical categorization
+            q_lower = normalized_q.lower()
+            if any(w in q_lower for w in ["heart", "chest pain", "cardio", "bp", "blood pressure", "bloodpressure", "pressure", "hypertension", "palpitation", "angina"]):
                 detected_specialty = "Cardiologist"
-            elif any(w in q_lower for w in ["bone", "joint", "knee", "back pain", "fracture"]):
+                urgency_level = "priority"
+            elif any(w in q_lower for w in ["child", "pediatric", "baby", "infant", "kids"]):
+                detected_specialty = "Pediatrician"
+                urgency_level = "priority"
+            elif any(w in q_lower for w in ["skin", "rash", "acne", "allergy", "eczema", "pimple"]):
+                detected_specialty = "Dermatologist"
+                urgency_level = "routine"
+            elif any(w in q_lower for w in ["bone", "joint", "knee", "back pain", "fracture", "spine"]):
                 detected_specialty = "Orthopedic"
+                urgency_level = "priority"
             else:
                 detected_specialty = "General Physician"
-            urgency_level = "routine"
+                urgency_level = "routine"
 
         # 2. Retrieve Live Doctors from MongoDB
         all_doctors: List[Dict[str, Any]] = []
@@ -294,8 +380,8 @@ class RAGRetriever:
             doc_entries.append((d.get("id", ""), doc_text, d))
         doctor_index.index_documents(doc_entries)
 
-        # Search doctor candidates using query + detected specialty
-        augmented_search_query = f"{query} {detected_specialty}"
+        # Search doctor candidates using normalized query + detected specialty
+        augmented_search_query = f"{normalized_q} {detected_specialty}"
         doc_search_results = doctor_index.search(augmented_search_query, top_k=5)
 
         # Re-rank doctors by: specialty match (highest) + rating + city relevance

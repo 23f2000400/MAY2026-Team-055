@@ -52,7 +52,10 @@ export default function AnalyticsDashboard() {
   };
 
   const fetchDoctors = async () => {
-    const res = await fetchApi("/api/doctors");
+    let res = await fetchApi("/api/reception/doctors");
+    if (!res.ok) {
+      res = await fetchApi("/api/doctors");
+    }
     if (res.ok) {
       const d = await res.json();
       setDoctors(d.doctors || []);

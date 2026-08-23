@@ -20,6 +20,9 @@ queries = [
     "Severe facial acne eruptions and itchy eczema rash"
 ]
 
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
 print("\n=== 2. LIVE GEMINI RAG TEST RESULTS ===")
 for q in queries:
     r = requests.post(f'{API}/ai/recommend', json={'description': q, 'city': 'Bengaluru'}, headers=headers, timeout=15)
@@ -29,5 +32,7 @@ for q in queries:
     print(f"-> Doctor: {doc.get('name')} | Specialty: {doc.get('specialty')} | Fee: Rs.{doc.get('fee')}")
     print(f"-> Urgency: {data.get('urgency_level')} | Provider: {data.get('rag_metrics', {}).get('llm_provider')}")
     print(f"-> Reasoning: {data.get('reasoning')}")
+    print(f"-> Clinical Notes: {data.get('clinical_notes')}")
     print(f"-> Sources Cited: {len(data.get('rag_sources', []))}")
+
 

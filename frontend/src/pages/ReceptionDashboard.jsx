@@ -32,7 +32,11 @@ export default function ReceptionDashboard() {
   }, []);
 
   return (
-    <DashboardShell roles={["reception"]} subtitle="Live operations" title="Reception control room">
+    <DashboardShell
+      roles={["reception"]}
+      subtitle={data?.hospital ? `${data.hospital} · Live operations` : "Live operations"}
+      title="Reception control room"
+    >
       {loading || !data ? (
         <div className="flex items-center gap-2 text-charcoal-soft">
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -82,7 +86,16 @@ export default function ReceptionDashboard() {
 
           {/* Per doctor */}
           <div className="mt-10 space-y-8" data-testid="reception-doctor-grid">
-            {data.doctors.map((d) => (
+            {data.doctors.length === 0 ? (
+              <div className="rounded-3xl bg-white border border-subtle p-8 text-center text-charcoal-soft">
+                <Stethoscope className="w-8 h-8 text-saffron mx-auto mb-2 opacity-50" />
+                <div className="font-semibold text-charcoal">No doctors registered for this hospital</div>
+                <p className="text-xs text-charcoal-soft mt-1">
+                  {data.hospital ? `There are currently no doctors assigned to ${data.hospital}.` : "No doctors found."}
+                </p>
+              </div>
+            ) : (
+              data.doctors.map((d) => (
               <section key={d.doctor.id} data-testid={`reception-doctor-${d.doctor.id}`} className="rounded-3xl bg-white border border-subtle overflow-hidden">
                 <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-4 border-b border-subtle">
                   <div className="w-12 h-12 rounded-full bg-saffron/10 grid place-items-center">
@@ -142,12 +155,13 @@ export default function ReceptionDashboard() {
                   </div>
                 )}
               </section>
-            ))}
+            )))}
           </div>
         </>
       )}
       {showWalkin && (
         <WalkinModal
+          doctorsList={data?.doctors?.map((d) => d.doctor)}
           onClose={() => setShowWalkin(false)}
           onAdded={() => { setShowWalkin(false); load(); }}
         />

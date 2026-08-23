@@ -29,9 +29,24 @@ async def reception_analytics(
 
     date_strs = [str(start + timedelta(days=i)) for i in range(num_days)]
 
+    # Hospital scoping for receptionists
+    user_hospital = user.get("hospital", "").strip()
+    hosp_doc_ids = []
+    if user_hospital and user.get("role") != "admin":
+        hosp_docs = await db.users.find({"role": "doctor", "hospital": user_hospital}, {"_id": 0, "id": 1}).to_list(200)
+        hosp_doc_ids = [d["id"] for d in hosp_docs]
+
     # Build filter
     filt = {"date": {"$gte": str(start), "$lte": str(today)}}
-    if doctor_id:
+    if user_hospital and user.get("role") != "admin":
+        if doctor_id:
+            if doctor_id in hosp_doc_ids:
+                filt["doctor_id"] = doctor_id
+            else:
+                filt["doctor_id"] = {"$in": []}
+        else:
+            filt["doctor_id"] = {"$in": hosp_doc_ids}
+    elif doctor_id:
         filt["doctor_id"] = doctor_id
 
     # Query bookings

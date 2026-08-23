@@ -35,6 +35,11 @@ async def add_walkin(body: WalkinIn, user: dict = Depends(require_role("receptio
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
 
+    user_hospital = user.get("hospital", "").strip()
+    if user_hospital and user.get("role") != "admin":
+        if doctor.get("hospital") != user_hospital:
+            raise HTTPException(status_code=403, detail=f"Cannot register walk-in for a doctor outside assigned hospital ({user_hospital})")
+
     today = datetime.now(timezone.utc).date().isoformat()
 
     # Find active queue (sorted by token_number ascending)
@@ -117,8 +122,13 @@ async def transfer_candidates(user: dict = Depends(require_role("reception"))):
         return {"candidates": []}
 
     late_doctor_ids = list({b["doctor_id"] for b in late_bookings})
+    doc_query = {"id": {"$in": late_doctor_ids}, "role": "doctor"}
+    user_hospital = user.get("hospital", "").strip()
+    if user_hospital and user.get("role") != "admin":
+        doc_query["hospital"] = user_hospital
+
     late_doctors = await db.users.find(
-        {"id": {"$in": late_doctor_ids}, "role": "doctor"},
+        doc_query,
         {"_id": 0, "password_hash": 0}
     ).to_list(50)
 

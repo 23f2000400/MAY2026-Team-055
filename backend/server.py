@@ -766,7 +766,13 @@ async def take_dose(body: TakeDoseIn, user: dict = Depends(require_role("patient
 @api.get("/reception/overview")
 async def reception_overview(user: dict = Depends(require_role("reception"))):
     today = datetime.now(timezone.utc).date().isoformat()
-    doctors = await db.users.find({"role": "doctor"}, {"_id": 0, "password_hash": 0}).to_list(100)
+    user_hospital = user.get("hospital", "").strip()
+
+    doc_filter = {"role": "doctor"}
+    if user_hospital and user.get("role") != "admin":
+        doc_filter["hospital"] = user_hospital
+
+    doctors = await db.users.find(doc_filter, {"_id": 0, "password_hash": 0}).to_list(100)
     out = []
     total = {"booked": 0, "arrived": 0, "in_consult": 0, "completed": 0, "cancelled": 0}
     for d in doctors:
@@ -776,7 +782,18 @@ async def reception_overview(user: dict = Depends(require_role("reception"))):
             stats[b["status"]] = stats.get(b["status"], 0) + 1
             total[b["status"]] = total.get(b["status"], 0) + 1
         out.append({"doctor": d, "queue": q, "stats": stats})
-    return {"doctors": out, "total": total, "date": today}
+    return {"doctors": out, "total": total, "date": today, "hospital": user_hospital}
+
+
+@api.get("/reception/doctors")
+async def reception_doctors(user: dict = Depends(require_role("reception"))):
+    user_hospital = user.get("hospital", "").strip()
+    doc_filter = {"role": "doctor"}
+    if user_hospital and user.get("role") != "admin":
+        doc_filter["hospital"] = user_hospital
+    doctors = await db.users.find(doc_filter, {"_id": 0, "password_hash": 0}).to_list(100)
+    return {"doctors": doctors, "hospital": user_hospital}
+
 
 
 # ---------- Admin Superuser Management ----------
