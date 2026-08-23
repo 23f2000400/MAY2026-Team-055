@@ -93,6 +93,9 @@ class LLMClient:
                     data = resp.json()
                     text = data["candidates"][0]["content"]["parts"][0]["text"]
                     return text.strip()
+                elif resp.status_code in (400, 401, 403):
+                    logger.warning(f"Gemini API auth error {resp.status_code}: {resp.text[:200]}")
+                    return None
                 elif resp.status_code == 404:
                     continue
                 else:

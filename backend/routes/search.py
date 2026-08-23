@@ -191,7 +191,4 @@ async def ai_recommend_doctor(body: RecommendIn, user: dict = Depends(get_curren
         if result["error"] == "non_medical_query":
             raise HTTPException(400, result["message"])
         raise HTTPException(503, result["message"])
-
     return result
-
-
