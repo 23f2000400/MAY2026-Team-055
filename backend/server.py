@@ -111,6 +111,9 @@ class BookingIn(BaseModel):
     doctor_id: str
     slot_time: str  # "HH:MM"
     date: Optional[str] = None  # YYYY-MM-DD, defaults to today
+    family_member_id: Optional[str] = None
+    symptoms: Optional[str] = None
+    patient_notes: Optional[str] = None
 
 
 class LateIn(BaseModel):
@@ -334,11 +337,20 @@ async def create_booking(body: BookingIn, user: dict = Depends(require_role("pat
     if user.get("wallet_balance", 0) < deposit:
         raise HTTPException(400, "Insufficient wallet balance (need ₹%d)" % deposit)
 
+    patient_name = user["name"]
+    if body.family_member_id:
+        fm = await db.family_members.find_one({"id": body.family_member_id, "deleted_at": None}, {"_id": 0})
+        if fm:
+            patient_name = fm.get("name", user["name"])
+
     booking = {
         "id": new_id(),
         "patient_id": user["id"],
-        "patient_name": user["name"],
+        "patient_name": patient_name,
         "patient_phone": user.get("phone", ""),
+        "family_member_id": body.family_member_id,
+        "symptoms": body.symptoms or "",
+        "patient_notes": body.patient_notes or "",
         "doctor_id": doctor["id"],
         "doctor_name": doctor["name"],
         "doctor_specialty": doctor.get("specialty", ""),
