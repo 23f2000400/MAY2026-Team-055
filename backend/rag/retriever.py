@@ -29,8 +29,11 @@ MEDICAL_VOCABULARY = {
     "bp", "blood pressure", "hypertension", "diabetes", "sugar", "thyroid", "acne", "hair",
     "ear", "nose", "throat", "ent", "tonsil", "sinus", "back", "spine", "orthopedic",
     "fracture", "swelling", "infection", "medicine", "prescription", "appointment", "pulse",
-    "breath", "breathing", "asthma", "allergy", "eczema", "itch", "itching", "weight",
-    "infant", "baby", "toddler", "kids", "urgent", "emergency", "burn", "wound", "injury"
+    "breath", "breathing", "asthma", "eczema", "itch", "itching", "weight",
+    "infant", "baby", "toddler", "kids", "urgent", "emergency", "burn", "wound", "injury",
+    "eyes", "eye", "vision", "teeth", "tooth", "dental", "dentist", "cancer", "tumor",
+    "kidney", "liver", "lungs", "sprain", "chills", "sore", "abdomen", "abdominal",
+    "migraine", "flu", "pregnant", "pregnancy", "gynecology", "psychiatry", "anxiety"
 }
 
 # Synonyms and clinical mapping expansion
@@ -219,7 +222,7 @@ class RAGRetriever:
                 val = int(num_str)
                 if 1 <= val <= 20000:
                     budget_val = val
-                    if val < 400 and "budget" in q_lower:
+                    if val < 400:
                         budget_warning = f"Stated budget ₹{val} is below minimum doctor fee (₹400)."
                     break
         return budget_val, budget_warning
@@ -272,8 +275,16 @@ class RAGRetriever:
             urgency_level = "routine"
 
         # 2. Retrieve Live Doctors from MongoDB
-        doctor_cursor = db.users.find({"role": "doctor"}, {"_id": 0, "password_hash": 0})
-        all_doctors = await doctor_cursor.to_list(100)
+        all_doctors: List[Dict[str, Any]] = []
+        try:
+            doctor_cursor = db.users.find({"role": "doctor"}, {"_id": 0, "password_hash": 0})
+            if hasattr(doctor_cursor, "to_list"):
+                all_doctors = await doctor_cursor.to_list(100)
+            elif hasattr(doctor_cursor, "__iter__"):
+                all_doctors = list(doctor_cursor)
+        except Exception as e:
+            logger.warning(f"Error fetching doctors from database: {e}")
+            all_doctors = []
 
         # Index doctors into ephemeral vector space
         doctor_index = VectorSpaceIndex()
@@ -301,9 +312,31 @@ class RAGRetriever:
             rating = doc_obj.get("rating", 4.5)
             score += (rating / 10.0)
             
-            # Ensure fee is present
-            doc_obj = {**doc_obj, "fee": doc_obj.get("fee", 500)}
+            # Ensure fee is present and clean
+            fee_val = doc_obj.get("fee", 500)
+            try:
+                fee_val = int(fee_val)
+            except (ValueError, TypeError):
+                fee_val = 500
+            doc_obj = {**doc_obj, "fee": fee_val}
             scored_candidates.append((score, doc_obj))
+
+        # Fallback if vector search returned no candidates
+        if not scored_candidates and all_doctors:
+            for d in all_doctors:
+                score = 0.1
+                if d.get("specialty", "").lower() == detected_specialty.lower():
+                    score += 2.0
+                if preferred_city and preferred_city.lower() in d.get("hospital", "").lower():
+                    score += 0.5
+                rating = d.get("rating", 4.5)
+                score += (rating / 10.0)
+                fee_val = d.get("fee", 500)
+                try:
+                    fee_val = int(fee_val)
+                except (ValueError, TypeError):
+                    fee_val = 500
+                scored_candidates.append((score, {**d, "fee": fee_val}))
 
         scored_candidates.sort(key=lambda x: x[0], reverse=True)
         retrieved_doctors = [item[1] for item in scored_candidates]
@@ -316,7 +349,9 @@ class RAGRetriever:
             top_doctor = matching_specialty_docs[0] if matching_specialty_docs else retrieved_doctors[0]
         elif all_doctors:
             # Fallback to any doctor in DB
-            top_doctor = {**all_doctors[0], "fee": all_doctors[0].get("fee", 500)}
+            fallback_doc = all_doctors[0]
+            fee_val = fallback_doc.get("fee", 500)
+            top_doctor = {**fallback_doc, "fee": fee_val}
             retrieved_doctors = [top_doctor]
 
         # 3. Budget analysis
