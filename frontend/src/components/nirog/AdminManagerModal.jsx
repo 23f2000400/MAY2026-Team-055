@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, UserPlus, Building2, Check, AlertCircle, Loader2, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
+import { X, Plus, UserPlus, Building2, ClipboardList, Check, AlertCircle, Loader2, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import api, { formatApiError } from "@/lib/api";
 
-export default function AdminManagerModal({ isOpen, onClose, onRefresh }) {
-  const [tab, setTab] = useState("doctor"); // "doctor" | "hospital"
+export default function AdminManagerModal({ isOpen, onClose, onRefresh, defaultTab = "doctor" }) {
+  const [tab, setTab] = useState(defaultTab); // "doctor" | "hospital" | "receptionist"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -26,6 +26,14 @@ export default function AdminManagerModal({ isOpen, onClose, onRefresh }) {
   const [docPhone, setDocPhone] = useState("+919876543210");
   const [docAvatar, setDocAvatar] = useState("");
 
+  // Receptionist Form State
+  const [recepName, setRecepName] = useState("");
+  const [recepEmail, setRecepEmail] = useState("");
+  const [recepPassword, setRecepPassword] = useState("nirog1234");
+  const [selectedRecepHospital, setSelectedRecepHospital] = useState("");
+  const [customRecepHospital, setCustomRecepHospital] = useState("");
+  const [recepPhone, setRecepPhone] = useState("+919876543210");
+
   // Hospital Form State
   const [hospName, setHospName] = useState("");
   const [hospCity, setHospCity] = useState("Bengaluru");
@@ -45,9 +53,12 @@ export default function AdminManagerModal({ isOpen, onClose, onRefresh }) {
       const list = data?.hospitals || [];
       setRegisteredHospitals(list);
       if (list.length > 0) {
-        setSelectedHospital(list[0].full_name || list[0].name);
+        const first = list[0].full_name || list[0].name;
+        setSelectedHospital(first);
+        setSelectedRecepHospital(first);
       } else {
         setSelectedHospital("other");
+        setSelectedRecepHospital("other");
       }
     } catch (e) {
       console.error("Failed to fetch hospitals:", e);
@@ -59,8 +70,9 @@ export default function AdminManagerModal({ isOpen, onClose, onRefresh }) {
   useEffect(() => {
     if (isOpen) {
       fetchRegisteredHospitals();
+      if (defaultTab) setTab(defaultTab);
     }
-  }, [isOpen]);
+  }, [isOpen, defaultTab]);
 
   if (!isOpen) return null;
 
@@ -109,6 +121,36 @@ export default function AdminManagerModal({ isOpen, onClose, onRefresh }) {
       setSuccess(`Doctor ${docName} registered under ${finalHospital}!`);
       setDocName("");
       setDocEmail("");
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setError(formatApiError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateReceptionist = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      const finalHospital = selectedRecepHospital === "other" ? customRecepHospital : selectedRecepHospital;
+      if (!finalHospital) {
+        throw new Error("Please select or specify a hospital");
+      }
+
+      const payload = {
+        name: recepName,
+        email: recepEmail,
+        password: recepPassword,
+        hospital: finalHospital,
+        phone: recepPhone,
+      };
+      await api.post("/admin/receptionists", payload);
+      setSuccess(`Receptionist ${recepName} registered for ${finalHospital}!`);
+      setRecepName("");
+      setRecepEmail("");
       if (onRefresh) onRefresh();
     } catch (err) {
       setError(formatApiError(err));
@@ -171,20 +213,29 @@ export default function AdminManagerModal({ isOpen, onClose, onRefresh }) {
           <div className="flex gap-2 mt-6 p-1 rounded-full bg-bone border border-subtle">
             <button
               onClick={() => { setTab("doctor"); setError(""); setSuccess(""); }}
-              className={`flex-1 py-2 px-4 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition ${
-                tab === "doctor" ? "bg-charcoal text-bone" : "text-charcoal-soft hover:text-charcoal"
+              className={`flex-1 py-2 px-3 rounded-full text-xs md:text-sm font-semibold flex items-center justify-center gap-1.5 transition ${
+                tab === "doctor" ? "bg-charcoal text-bone shadow-sm" : "text-charcoal-soft hover:text-charcoal"
               }`}
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4 shrink-0" />
               Add Doctor
             </button>
             <button
-              onClick={() => { setTab("hospital"); setError(""); setSuccess(""); }}
-              className={`flex-1 py-2 px-4 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition ${
-                tab === "hospital" ? "bg-charcoal text-bone" : "text-charcoal-soft hover:text-charcoal"
+              onClick={() => { setTab("receptionist"); setError(""); setSuccess(""); }}
+              className={`flex-1 py-2 px-3 rounded-full text-xs md:text-sm font-semibold flex items-center justify-center gap-1.5 transition ${
+                tab === "receptionist" ? "bg-charcoal text-bone shadow-sm" : "text-charcoal-soft hover:text-charcoal"
               }`}
             >
-              <Building2 className="w-4 h-4" />
+              <ClipboardList className="w-4 h-4 shrink-0" />
+              Add Receptionist
+            </button>
+            <button
+              onClick={() => { setTab("hospital"); setError(""); setSuccess(""); }}
+              className={`flex-1 py-2 px-3 rounded-full text-xs md:text-sm font-semibold flex items-center justify-center gap-1.5 transition ${
+                tab === "hospital" ? "bg-charcoal text-bone shadow-sm" : "text-charcoal-soft hover:text-charcoal"
+              }`}
+            >
+              <Building2 className="w-4 h-4 shrink-0" />
               Add Hospital
             </button>
           </div>
@@ -329,6 +380,29 @@ export default function AdminManagerModal({ isOpen, onClose, onRefresh }) {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-charcoal-soft uppercase mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={docPhone}
+                    onChange={(e) => setDocPhone(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-subtle focus:border-saffron outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-charcoal-soft uppercase mb-1">Avatar / Photo URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    value={docAvatar}
+                    onChange={(e) => setDocAvatar(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-subtle focus:border-saffron outline-none text-sm"
+                  />
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -336,6 +410,107 @@ export default function AdminManagerModal({ isOpen, onClose, onRefresh }) {
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 Create Doctor Account
+              </button>
+            </form>
+          )}
+
+          {/* Receptionist Form */}
+          {tab === "receptionist" && (
+            <form onSubmit={handleCreateReceptionist} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-charcoal-soft uppercase mb-1">Receptionist Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Ramesh Kumar"
+                  value={recepName}
+                  onChange={(e) => setRecepName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-subtle focus:border-saffron outline-none text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-charcoal-soft uppercase mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="receptionist@nirog.in"
+                    value={recepEmail}
+                    onChange={(e) => setRecepEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-subtle focus:border-saffron outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-charcoal-soft uppercase mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={recepPassword}
+                    onChange={(e) => setRecepPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-subtle focus:border-saffron outline-none text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-charcoal-soft uppercase mb-1">Assigned Hospital / Clinic</label>
+                {hospitalsLoading ? (
+                  <div className="w-full px-4 py-2.5 rounded-xl border border-subtle bg-bone text-sm text-charcoal-soft flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading hospitals…
+                  </div>
+                ) : (
+                  <select
+                    value={selectedRecepHospital}
+                    onChange={(e) => setSelectedRecepHospital(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-subtle focus:border-saffron outline-none text-sm bg-white"
+                  >
+                    {registeredHospitals.map((h) => {
+                      const val = h.full_name || `${h.name}, ${h.city}`;
+                      return (
+                        <option key={h.id} value={val}>
+                          {val}
+                        </option>
+                      );
+                    })}
+                    <option value="other">+ Enter Custom Hospital</option>
+                  </select>
+                )}
+              </div>
+
+              {selectedRecepHospital === "other" && (
+                <div>
+                  <label className="block text-xs font-semibold text-charcoal-soft uppercase mb-1">Custom Hospital Name & City</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Sanjeevani Clinic, Bengaluru"
+                    value={customRecepHospital}
+                    onChange={(e) => setCustomRecepHospital(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-subtle focus:border-saffron outline-none text-sm"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-charcoal-soft uppercase mb-1">Phone Number (Optional)</label>
+                <input
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  value={recepPhone}
+                  onChange={(e) => setRecepPhone(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-subtle focus:border-saffron outline-none text-sm"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 rounded-full bg-charcoal text-bone font-semibold hover:bg-saffron transition flex items-center justify-center gap-2 mt-4"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Create Receptionist Account
               </button>
             </form>
           )}

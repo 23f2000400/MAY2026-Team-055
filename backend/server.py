@@ -88,7 +88,13 @@ async def get_current_user(request: Request) -> dict:
 
 def require_role(*roles: str):
     async def dep(user: dict = Depends(get_current_user)) -> dict:
-        if user.get("role") not in roles and user.get("role") != "admin":
+        user_role = user.get("role")
+        user_roles_matched = {user_role}
+        if user_role == "reception":
+            user_roles_matched.add("receptionist")
+        elif user_role == "receptionist":
+            user_roles_matched.add("reception")
+        if not any(r in roles for r in user_roles_matched) and user_role != "admin":
             raise HTTPException(status_code=403, detail="Forbidden")
         return user
     return dep
@@ -131,6 +137,14 @@ class CreateDoctorIn(BaseModel):
     experience_years: int = 5
     rating: float = 4.8
     avatar: Optional[str] = ""
+    phone: Optional[str] = ""
+
+
+class CreateReceptionistIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6)
+    name: str
+    hospital: str
     phone: Optional[str] = ""
 
 
@@ -791,6 +805,32 @@ async def admin_create_doctor(body: CreateDoctorIn, user: dict = Depends(require
     }
     await db.users.insert_one(doctor)
     return {"ok": True, "doctor": strip_user({k: v for k, v in doctor.items() if k != "_id"})}
+
+
+@api.post("/admin/receptionists")
+async def admin_create_receptionist(body: CreateReceptionistIn, user: dict = Depends(require_role("admin"))):
+    email = body.email.lower()
+    if await db.users.find_one({"email": email}):
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    receptionist = {
+        "id": new_id(),
+        "email": email,
+        "name": body.name,
+        "role": "reception",
+        "hospital": body.hospital,
+        "phone": body.phone or "",
+        "password_hash": hash_password(body.password),
+        "created_at": now_iso(),
+    }
+    await db.users.insert_one(receptionist)
+    return {"ok": True, "receptionist": strip_user({k: v for k, v in receptionist.items() if k != "_id"})}
+
+
+@api.get("/admin/receptionists")
+async def admin_list_receptionists(user: dict = Depends(require_role("admin"))):
+    receptionists = await db.users.find({"role": {"$in": ["reception", "receptionist"]}}, {"_id": 0, "password_hash": 0}).to_list(100)
+    return {"receptionists": receptionists}
 
 
 @api.post("/admin/hospitals")

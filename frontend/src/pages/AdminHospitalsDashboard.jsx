@@ -3,7 +3,8 @@ import DashboardShell from "./DashboardShell";
 import api, { formatApiError } from "@/lib/api";
 import {
   Building2, Stethoscope, Users, TrendingUp, Search, Plus, Edit3, Trash2,
-  BarChart3, Star, MapPin, Tag, IndianRupee, Loader2, Check, AlertCircle, RefreshCw
+  BarChart3, Star, MapPin, Tag, IndianRupee, Loader2, Check, AlertCircle, RefreshCw,
+  UserPlus, ClipboardList
 } from "lucide-react";
 import AdminManagerModal from "@/components/nirog/AdminManagerModal";
 
@@ -14,6 +15,7 @@ export default function AdminHospitalsDashboard() {
   const [search, setSearch] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createTab, setCreateTab] = useState("hospital");
 
   // Analytics & Detail Modal state
   const [selectedHospitalAnalytics, setSelectedHospitalAnalytics] = useState(null);
@@ -120,13 +122,27 @@ export default function AdminHospitalsDashboard() {
     <DashboardShell roles={["admin"]} subtitle="Superuser Control Panel" title="Hospital Network & Analytics">
       {/* Top Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={() => setIsCreateOpen(true)}
-            className="px-5 py-2.5 rounded-full bg-saffron text-bone font-semibold text-sm hover:bg-charcoal transition flex items-center gap-2 shadow-md"
+            onClick={() => { setCreateTab("hospital"); setIsCreateOpen(true); }}
+            className="px-4 py-2.5 rounded-full bg-saffron text-bone font-semibold text-xs md:text-sm hover:bg-charcoal transition flex items-center gap-2 shadow-md"
           >
-            <Plus className="w-4 h-4" />
-            <span>Register New Hospital</span>
+            <Building2 className="w-4 h-4" />
+            <span>Register Hospital</span>
+          </button>
+          <button
+            onClick={() => { setCreateTab("doctor"); setIsCreateOpen(true); }}
+            className="px-4 py-2.5 rounded-full bg-charcoal text-bone font-semibold text-xs md:text-sm hover:bg-saffron transition flex items-center gap-2 shadow-md"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add Doctor</span>
+          </button>
+          <button
+            onClick={() => { setCreateTab("receptionist"); setIsCreateOpen(true); }}
+            className="px-4 py-2.5 rounded-full bg-bone border border-subtle text-charcoal font-semibold text-xs md:text-sm hover:bg-charcoal hover:text-bone transition flex items-center gap-2 shadow-sm"
+          >
+            <ClipboardList className="w-4 h-4 text-saffron" />
+            <span>Add Receptionist</span>
           </button>
           <button
             onClick={loadHospitals}
@@ -467,6 +483,7 @@ export default function AdminHospitalsDashboard() {
       {/* Create Modal */}
       <AdminManagerModal
         isOpen={isCreateOpen}
+        defaultTab={createTab}
         onClose={() => setIsCreateOpen(false)}
         onRefresh={loadHospitals}
       />
